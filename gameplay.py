@@ -1,3 +1,4 @@
+import time
 from abc import ABC, abstractmethod
 from multiprocessing.pool import ThreadPool
 
@@ -10,7 +11,7 @@ from values import Color
 
 class Gameplay(ABC):
 
-    def __init__(self, size, player_white, player_black, delay=0):
+    def __init__(self, size, player_white, player_black, delay):
         self.game_state = GameState(size)
 
         self.player_white = player_white
@@ -49,8 +50,8 @@ class GuiGameplay(Gameplay):
     FIELD_SIZE = 100
     DISC_SIZE = 80
 
-    def __init__(self, size, player_white, player_black):
-        super().__init__(size, player_white, player_black)
+    def __init__(self, size, player_white, player_black, delay=0):
+        super().__init__(size, player_white, player_black, delay)
 
         self.running = True
         self.screen = None
@@ -132,7 +133,7 @@ class GuiGameplay(Gameplay):
 
     def __get_action_from_artificial_player(self, player):
         if self.task is None:
-            self.task = self.pool.apply_async(lambda player, env: player.take_action(env), [player, self._env])
+            self.task = self.pool.apply_async(GuiGameplay._thread_to_get_action, [player, self._env, self.delay])
 
         if self.task.ready():
             action = self.task.get()
@@ -140,6 +141,18 @@ class GuiGameplay(Gameplay):
             return action
 
         return None
+
+    @staticmethod
+    def _thread_to_get_action(player, env, delay):
+        start_time = time.time()
+        action = player.take_action(env)
+        duration = time.time() - start_time
+
+        sleep_time = delay - duration
+        if sleep_time > 0:
+            time.sleep(sleep_time)
+
+        return action
 
     def __get_action_from_real_player(self):
         possible_moves = self.game_state.get_moves()
