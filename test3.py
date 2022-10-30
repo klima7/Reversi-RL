@@ -1,10 +1,15 @@
+from multiprocessing import freeze_support
+
 from agents import RandomAgent
-from gameplay_gui import GameplayGui
+from gameplay import Gameplay
 
-agent1 = RandomAgent({}, False)
-agent2 = RandomAgent({}, False)
+if __name__ == '__main__':
+    freeze_support()
 
-gameplay = GameplayGui(4, agent1, None)
-winner = gameplay.play()
+    agent1 = RandomAgent({}, False)
+    agent2 = RandomAgent({}, False)
 
-print(winner)
+    gameplay = Gameplay(6, agent1, None, gui=True)
+    winner = gameplay.play()
+
+    print(winner)
