@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from multiprocessing.pool import ThreadPool
 
 import pygame
@@ -7,12 +8,9 @@ from environment import Environment
 from values import Color
 
 
-class Gameplay:
+class Gameplay(ABC):
 
-    FIELD_SIZE = 100
-    DISC_SIZE = 80
-
-    def __init__(self, size, player_white, player_black, gui=False):
+    def __init__(self, size, player_white, player_black):
         self.game_state = GameState(size)
 
         self.player_white = player_white
@@ -21,38 +19,45 @@ class Gameplay:
         self.env_white = Environment(self.game_state, Color.WHITE)
         self.env_black = Environment(self.game_state, Color.BLACK)
 
-        self.gui = gui
-        self.running = True
+    @property
+    def _player(self):
+        return self.player_white if self.game_state.turn_color == Color.WHITE else self.player_black
 
-        # GUI related
+    @property
+    def _env(self):
+        return self.env_white if self.game_state.turn_color == Color.WHITE else self.env_black
+
+    @abstractmethod
+    def play(self):
+        pass
+
+
+class NoGuiGameplay(Gameplay):
+    ...
+
+
+class GuiGameplay(Gameplay):
+
+    FIELD_SIZE = 100
+    DISC_SIZE = 80
+
+    def __init__(self, size, player_white, player_black):
+        super().__init__(size, player_white, player_black)
+
+        self.running = True
         self.screen = None
         self.pool = ThreadPool(1)
         self.task = None
 
-    @property
-    def __player(self):
-        return self.player_white if self.game_state.turn_color == Color.WHITE else self.player_black
-
-    @property
-    def __env(self):
-        return self.env_white if self.game_state.turn_color == Color.WHITE else self.env_black
-
     def play(self):
-        if self.gui:
-            self.__init_gui()
+        self.__init_gui()
 
         while not self.game_state.is_finished() and self.running:
-            if self.gui:
-                self.__collect_events()
-
+            self.__collect_events()
             self.__update()
+            self.__draw_screen()
 
-            if self.gui:
-                self.__draw_screen()
-
-        if self.gui:
-            self.__dispose_gui()
-
+        self.__dispose_gui()
         return self.game_state.get_winner()
 
     def __init_gui(self):
@@ -69,39 +74,6 @@ class Gameplay:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-
-    def __update(self):
-        action = self.__get_action_from_player(self.__player)
-        if action is not None:
-            self.game_state.make_move(action)
-
-    def __get_action_from_player(self, player):
-        if player is None:
-            return self.__get_action_from_real_player()
-        else:
-            return self.__get_action_from_artificial_player(player)
-
-    def __get_action_from_artificial_player(self, player):
-        if self.task is None:
-            self.task = self.pool.apply_async(lambda player, env: player.take_action(env), [player, self.__env])
-
-        if self.task.ready():
-            action = self.task.get()
-            self.task = None
-            return action
-
-        return None
-
-    def __get_action_from_real_player(self):
-        possible_moves = self.game_state.get_moves()
-        pressed = pygame.mouse.get_pressed()
-        if pressed[0]:
-            mouse_pos = pygame.mouse.get_pos()
-            move_pos = (mouse_pos[1] // self.FIELD_SIZE, mouse_pos[0] // self.FIELD_SIZE)
-            if move_pos in possible_moves:
-                return move_pos
-            return None
-        return None
 
     def __draw_screen(self):
         self.__draw_board()
@@ -128,3 +100,36 @@ class Gameplay:
                 elif disc_color != Color.ANY:
                     color = [255, 255, 255] if disc_color == Color.WHITE else [0, 0, 0]
                     pygame.draw.circle(self.screen, color, pos, self.DISC_SIZE // 2)
+
+    def __update(self):
+        action = self.__get_action_from_player(self._player)
+        if action is not None:
+            self.game_state.make_move(action)
+
+    def __get_action_from_player(self, player):
+        if player is None:
+            return self.__get_action_from_real_player()
+        else:
+            return self.__get_action_from_artificial_player(player)
+
+    def __get_action_from_artificial_player(self, player):
+        if self.task is None:
+            self.task = self.pool.apply_async(lambda player, env: player.take_action(env), [player, self._env])
+
+        if self.task.ready():
+            action = self.task.get()
+            self.task = None
+            return action
+
+        return None
+
+    def __get_action_from_real_player(self):
+        possible_moves = self.game_state.get_moves()
+        pressed = pygame.mouse.get_pressed()
+        if pressed[0]:
+            mouse_pos = pygame.mouse.get_pos()
+            move_pos = (mouse_pos[1] // self.FIELD_SIZE, mouse_pos[0] // self.FIELD_SIZE)
+            if move_pos in possible_moves:
+                return move_pos
+            return None
+        return None
