@@ -3,7 +3,7 @@ import board_tools as bt
 
 def generate_all_states(size):
     all_states = []
-    current_states = [bt.create_board(4)]
+    current_states = [bt.create_abs_board(4)]
 
     while current_states:
         current_state = current_states.pop(0)

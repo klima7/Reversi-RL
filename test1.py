@@ -2,7 +2,7 @@ import board_tools
 import numpy as np
 import board_tools as bt
 
-b = bt.create_board(8)
+b = bt.create_abs_board(8)
 bt.plot(b)
 print(bt.get_legal_moves(b))
 # b[2, 4] = 1

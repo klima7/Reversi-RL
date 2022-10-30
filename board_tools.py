@@ -13,15 +13,22 @@ def create_abs_board(size):
     return board
 
 
-def create_rel_board(abs_board, my_color):
-    rel_board = np.ones_like(abs_board) * Side.OPPONENT
-    rel_board[abs_board == my_color] = Side.ME
-    rel_board[abs_board == Color.ANY] = Side.ANY
-    return rel_board
+def convert_to_rel_board(abs_board, my_color):
+    if my_color == Color.WHITE:
+        return np.array(abs_board)
+    else:
+        return inverted(abs_board)
 
 
-def inverted(rel_board):
-    return 1 - rel_board
+def convert_to_abs_board(rel_board, my_color):
+    if my_color == Color.WHITE:
+        return np.array(rel_board)
+    else:
+        return inverted(rel_board)
+
+
+def inverted(board):
+    return 1 - board
 
 
 def get_positions_to_reverse(rel_board, position):
@@ -49,8 +56,8 @@ def get_positions_to_reverse_in_direction(rel_board, position, direction):
     return []
 
 
-def is_valid_position(board, position):
-    return np.all(position >= 0) and np.all(position < board.shape[0])
+def is_valid_position(any_board, position):
+    return np.all(position >= 0) and np.all(position < any_board.shape[0])
 
 
 def get_legal_moves(rel_board):
@@ -75,20 +82,20 @@ def get_board_after_move(rel_board, position):
     return new_rel_board
 
 
-def is_finished(board):
-    return is_board_full(board) or no_one_has_moves(board)
+def is_finished(rel_board):
+    return is_board_full(rel_board) or no_one_has_moves(rel_board)
 
 
-def is_board_full(board):
-    return np.all(board != Side.ANY)
+def is_board_full(any_board):
+    return np.all(any_board != Side.ANY)
 
 
-def no_one_has_moves(board):
-    return len(get_legal_moves(board)) == 0 and len(get_legal_moves(inverted(board))) == 0
+def no_one_has_moves(rel_board):
+    return len(get_legal_moves(rel_board)) == 0 and len(get_legal_moves(inverted(rel_board))) == 0
 
 
-def get_winner(board):
-    return np.sign(np.sum(board))
+def get_winner(rel_board):
+    return np.sign(np.sum(rel_board))
 
 
 def plot(abs_board, title=None):

@@ -1,10 +1,10 @@
-class Player:
+class Color:
     WHITE = 1
-    BLACK = 2
-    NO_ONE = 0
+    BLACK = -1
+    ANY = 0
 
 
-class PlayerSide:
+class Side:
     ME = 1
     OPPONENT = -1
-    NO_ONE = 0
+    ANY = 0
