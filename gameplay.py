@@ -6,7 +6,7 @@ import pygame
 
 from game_state import GameState
 from environment import Environment
-from values import Color
+from board import Color
 
 
 class Gameplay(ABC):
