@@ -10,7 +10,7 @@ from values import Color
 
 class Gameplay(ABC):
 
-    def __init__(self, size, player_white, player_black):
+    def __init__(self, size, player_white, player_black, delay=0):
         self.game_state = GameState(size)
 
         self.player_white = player_white
@@ -18,6 +18,8 @@ class Gameplay(ABC):
 
         self.env_white = Environment(self.game_state, Color.WHITE)
         self.env_black = Environment(self.game_state, Color.BLACK)
+
+        self.delay = delay
 
     @property
     def _player(self):
@@ -54,6 +56,7 @@ class GuiGameplay(Gameplay):
         self.screen = None
         self.pool = ThreadPool(1)
         self.task = None
+        self.last_move = None
 
     def play(self):
         self.__init_gui()
@@ -84,6 +87,7 @@ class GuiGameplay(Gameplay):
     def __draw_screen(self):
         self.__draw_board()
         self.__draw_discs()
+        self.__draw_last_move()
         pygame.display.flip()
 
     def __draw_board(self):
@@ -107,10 +111,18 @@ class GuiGameplay(Gameplay):
                     color = [255, 255, 255] if disc_color == Color.WHITE else [0, 0, 0]
                     pygame.draw.circle(self.screen, color, pos, self.DISC_SIZE // 2)
 
+    def __draw_last_move(self):
+        if self.last_move is not None:
+            y, x = self.last_move
+            x_pos, y_pos = x*self.FIELD_SIZE+self.FIELD_SIZE//2, y*self.FIELD_SIZE+self.FIELD_SIZE//2
+            pygame.draw.line(self.screen, (255, 0, 0), (x_pos, 0), (x_pos, self.game_state.size * self.FIELD_SIZE), width=2)
+            pygame.draw.line(self.screen, (255, 0, 0), (0, y_pos), (self.game_state.size * self.FIELD_SIZE, y_pos), width=2)
+
     def __update(self):
         action = self.__get_action_from_player(self._player)
         if action is not None:
             self.game_state.make_move(action)
+            self.last_move = action
 
     def __get_action_from_player(self, player):
         if player is None:
