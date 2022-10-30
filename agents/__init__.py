@@ -1,8 +1,2 @@
-from .agent import Agent
-from .expectimax import ExpectiMaxAgent
+from .base import Agent
 from .random import RandomAgent
-
-ALL_AGENTS = {
-    'expectimax': ExpectiMaxAgent,
-    'random': RandomAgent
-}

@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 
 from values import Side, Color
 
@@ -17,18 +15,14 @@ def convert_to_rel_board(abs_board, my_color):
     if my_color == Color.WHITE:
         return np.array(abs_board)
     else:
-        return inverted(abs_board)
+        return -abs_board
 
 
 def convert_to_abs_board(rel_board, my_color):
     if my_color == Color.WHITE:
         return np.array(rel_board)
     else:
-        return inverted(rel_board)
-
-
-def inverted(board):
-    return 1 - board
+        return -rel_board
 
 
 def get_positions_to_reverse(board, position, color):
@@ -95,10 +89,3 @@ def no_one_has_moves(board):
 
 def get_winner(board):
     return np.sign(np.sum(board))
-
-
-def plot(board, title=None):
-    cmap = ListedColormap(["black", "green", "white"], name='board', N=None)
-    plt.matshow(board, cmap=cmap)
-    plt.title(title)
-    plt.show()

@@ -1,5 +1,4 @@
 import random
-import time
 
 from . import Agent
 from environment import Environment
