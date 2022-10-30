@@ -1,6 +1,5 @@
 from game_state import GameState
 from environment import Environment
-
 from values import Color
 
 
