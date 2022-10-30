@@ -1,33 +1,40 @@
-import board_tools as bt
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
-from values import Color, Side
+import board_tools as bt
+from values import Color
 
 
 class GameState:
 
     def __init__(self, size):
         self.size = size
-        self.board = bt.create_abs_board(size)
+        self.board = bt.create_board(size)
         self.turn_color = Color.BLACK
 
-    def get_state(self):
-        return bt.convert_to_rel_board(self.board, self.turn_color)
+    def get_moves(self):
+        return bt.get_legal_moves(self.board, self.turn_color)
 
-    def perform_action(self, position):
-        rel_board = bt.convert_to_rel_board(self.board, self.turn_color)
-        new_rel_board = bt.get_board_after_move(rel_board, position)
-        self.board = bt.convert_to_abs_board(new_rel_board, self.turn_color)
-        self.turn_color = 1 - self.turn_color
+    def make_move(self, move):
+        legal_actions = bt.get_legal_moves(self.board, self.turn_color)
+        if move not in legal_actions:
+            raise Exception('Illegal action was requested')
+
+        self.board = bt.get_board_after_move(self.board, move, self.turn_color)
+        self.__change_turn()
 
     def is_finished(self):
         return bt.is_finished(self.board)
 
     def get_winner(self):
-        rel_board = bt.convert_to_rel_board(self.board, Color.WHITE)
-        winner = bt.get_winner(rel_board)
-        if winner == Side.ME:
-            return Color.WHITE
-        elif winner == Side.OPPONENT:
-            return Color.BLACK
-        else:
-            return Color.ANY
+        return bt.get_winner(self.board)
+
+    def __change_turn(self):
+        if len(bt.get_legal_moves(self.board, -self.turn_color)) > 0:
+            self.turn_color = -self.turn_color
+
+    def plot(self, title=None):
+        cmap = ListedColormap(["black", "green", "white"], name='board', N=None)
+        plt.matshow(self.board, cmap=cmap)
+        plt.title(title)
+        plt.show()

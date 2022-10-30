@@ -5,7 +5,7 @@ from matplotlib.colors import ListedColormap
 from values import Side, Color
 
 
-def create_abs_board(size):
+def create_board(size):
     board = np.zeros((size, size), dtype=np.byte)
     center = size // 2 - 1
     board[center][center] = board[center+1][center+1] = Color.WHITE
@@ -38,7 +38,8 @@ def get_positions_to_reverse(board, position, color):
     for direction in directions:
         discs = get_positions_to_reverse_in_direction(board, position, color, direction)
         discs_to_reverse.extend(discs)
-    return np.array(discs_to_reverse)
+
+    return np.array(discs_to_reverse).reshape(-1, 2).astype(np.int_)
 
 
 def get_positions_to_reverse_in_direction(board, position, color, direction):
@@ -73,11 +74,9 @@ def is_legal_move(board, position, color):
 
 
 def get_board_after_move(board, position, color):
-    if not is_legal_move(board, position, color):
-        raise Exception("Illegal move was requested")
     new_board = np.array(board)
-    new_board[position[0], position[1]] = Side.ME
-    reverse_positions = get_positions_to_reverse(board, position, color)
+    new_board[position[0], position[1]] = color
+    reverse_positions = get_positions_to_reverse(new_board, position, color)
     new_board[reverse_positions[:, 0], reverse_positions[:, 1]] = color
     return new_board
 

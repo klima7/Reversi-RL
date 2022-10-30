@@ -7,4 +7,6 @@ agent2 = RandomAgent({}, False)
 gameplay = Gameplay(4, agent1, agent2)
 winner = gameplay.play()
 
+gameplay.game_state.plot()
+
 print(winner)
