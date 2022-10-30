@@ -13,7 +13,9 @@ class GameState:
         self.turn_color = Color.BLACK
 
     def get_moves(self):
-        return bt.get_legal_moves(self.board, self.turn_color)
+        moves_array = bt.get_legal_moves(self.board, self.turn_color)
+        moves_tuple = tuple(map(tuple, moves_array))
+        return moves_tuple
 
     def make_move(self, move):
         legal_actions = bt.get_legal_moves(self.board, self.turn_color)
