@@ -33,7 +33,13 @@ class Gameplay(ABC):
 
 
 class NoGuiGameplay(Gameplay):
-    ...
+
+    def play(self):
+        while not self.game_state.is_finished():
+            action = self._player.take_action(self._env)
+            self.game_state.make_move(action)
+
+        return self.game_state.get_winner()
 
 
 class GuiGameplay(Gameplay):
