@@ -12,6 +12,7 @@ from board import Color
 class Gameplay(ABC):
 
     def __init__(self, size, player_white, player_black, delay):
+        self.size = size
         self.game_state = GameState(size)
 
         self.player_white = player_white
@@ -72,8 +73,8 @@ class GuiGameplay(Gameplay):
 
     def __init_gui(self):
         pygame.init()
-        self.screen = pygame.display.set_mode([self.game_state.size * self.FIELD_SIZE, self.game_state.size * self.FIELD_SIZE])
-        pygame.display.set_caption('Reversi')
+        self.screen = pygame.display.set_mode([self.size[1] * self.FIELD_SIZE, self.size[0] * self.FIELD_SIZE])
+        pygame.display.set_caption(f'Reversi {self.size[0]}x{self.size[1]}')
 
     def __dispose_gui(self):
         pygame.quit()
@@ -93,16 +94,17 @@ class GuiGameplay(Gameplay):
 
     def __draw_board(self):
         self.screen.fill((0, 128, 0))
-        pygame.draw.rect(self.screen, (0, 150, 0), (0, 0, self.game_state.size * self.FIELD_SIZE, self.game_state.size * self.FIELD_SIZE), width=3)
-        for i in range(1, self.game_state.size):
-            pygame.draw.line(self.screen, (0, 150, 0), (i*self.FIELD_SIZE, 0), (i*self.FIELD_SIZE, self.game_state.size * self.FIELD_SIZE), width=3)
-            pygame.draw.line(self.screen, (0, 150, 0), (0, i*self.FIELD_SIZE), (self.game_state.size * self.FIELD_SIZE, i*self.FIELD_SIZE), width=3)
+        pygame.draw.rect(self.screen, (0, 150, 0), (0, 0, self.size[1] * self.FIELD_SIZE, self.size[0] * self.FIELD_SIZE), width=3)
+        for y in range(1, self.size[0]):
+            pygame.draw.line(self.screen, (0, 150, 0), (0, y*self.FIELD_SIZE), (self.size[1] * self.FIELD_SIZE, y*self.FIELD_SIZE), width=3)
+        for x in range(1, self.size[1]):
+            pygame.draw.line(self.screen, (0, 150, 0), (x*self.FIELD_SIZE, 0), (x*self.FIELD_SIZE, self.size[0] * self.FIELD_SIZE), width=3)
 
     def __draw_discs(self):
         possible_moves = self.game_state.get_moves()
         disc_center_offset = self.FIELD_SIZE // 2
-        for y in range(self.game_state.size):
-            for x in range(self.game_state.size):
+        for y in range(self.size[0]):
+            for x in range(self.size[1]):
                 disc_color = self.game_state.board[y, x]
                 pos = (x * self.FIELD_SIZE + disc_center_offset, y * self.FIELD_SIZE + disc_center_offset)
                 if disc_color == Color.ANY and (y, x) in possible_moves:
@@ -116,8 +118,8 @@ class GuiGameplay(Gameplay):
         if self.last_move is not None:
             y, x = self.last_move
             x_pos, y_pos = x*self.FIELD_SIZE+self.FIELD_SIZE//2, y*self.FIELD_SIZE+self.FIELD_SIZE//2
-            pygame.draw.line(self.screen, (255, 0, 0), (x_pos, 0), (x_pos, self.game_state.size * self.FIELD_SIZE), width=2)
-            pygame.draw.line(self.screen, (255, 0, 0), (0, y_pos), (self.game_state.size * self.FIELD_SIZE, y_pos), width=2)
+            pygame.draw.line(self.screen, (255, 0, 0), (x_pos, 0), (x_pos, self.size[0] * self.FIELD_SIZE), width=2)
+            pygame.draw.line(self.screen, (255, 0, 0), (0, y_pos), (self.size[1] * self.FIELD_SIZE, y_pos), width=2)
 
     def __update(self):
         action = self.__get_action_from_player(self._player)

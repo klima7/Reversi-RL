@@ -14,10 +14,10 @@ class Side:
 
 
 def create_board(size):
-    board = np.zeros((size, size), dtype=np.byte)
-    center = size // 2 - 1
-    board[center][center] = board[center+1][center+1] = Color.WHITE
-    board[center+1][center] = board[center][center+1] = Color.BLACK
+    board = np.zeros(size, dtype=np.byte)
+    center_y, center_x = np.array(size) // 2 - 1
+    board[center_y][center_x] = board[center_y+1][center_x+1] = Color.WHITE
+    board[center_y+1][center_x] = board[center_y][center_x+1] = Color.BLACK
     return board
 
 
@@ -62,7 +62,7 @@ def get_positions_to_reverse_in_direction(board, position, color, direction):
 
 
 def is_valid_position(board, position):
-    return np.all(position >= 0) and np.all(position < board.shape[0])
+    return 0 <= position[0] < board.shape[0] and 0 <= position[1] < board.shape[1]
 
 
 def get_legal_moves(board, color):
