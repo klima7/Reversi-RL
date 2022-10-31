@@ -1,9 +1,10 @@
 import random
 
-from . import Agent
+from . import Agent, agent
 from environment import Environment
 
 
+@agent('random')
 class RandomAgent(Agent):
 
     def take_action(self, env: Environment):

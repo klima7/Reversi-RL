@@ -1,4 +1,4 @@
-from agents import RandomAgent
+from agents import agents, RandomAgent
 from gameplay import GuiGameplay, NoGuiGameplay
 
 if __name__ == '__main__':
