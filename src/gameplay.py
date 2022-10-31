@@ -11,12 +11,12 @@ from board import Color
 
 class Gameplay(ABC):
 
-    def __init__(self, size, player_white, player_black, delay):
+    def __init__(self, size, player_black, player_white, delay):
         self.size = size
         self.game_state = GameState(size)
 
-        self.player_white = player_white
         self.player_black = player_black
+        self.player_white = player_white
 
         self.env_white = Environment(self.game_state, Color.WHITE)
         self.env_black = Environment(self.game_state, Color.BLACK)
@@ -74,7 +74,16 @@ class GuiGameplay(Gameplay):
     def __init_gui(self):
         pygame.init()
         self.screen = pygame.display.set_mode([self.size[1] * self.FIELD_SIZE, self.size[0] * self.FIELD_SIZE])
-        pygame.display.set_caption(f'Reversi {self.size[0]}x{self.size[1]}')
+        white_name = self.__get_player_name(self.player_white)
+        black_name = self.__get_player_name(self.player_black)
+        pygame.display.set_caption(f'Reversi {self.size[0]}x{self.size[1]} | White: {white_name} | Black: {black_name}')
+
+    @staticmethod
+    def __get_player_name(player):
+        if player is None:
+            return 'human'
+        else:
+            return player.agent_name
 
     def __dispose_gui(self):
         pygame.quit()
