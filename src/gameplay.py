@@ -10,6 +10,7 @@ from tqdm import tqdm
 from game_state import GameState
 from environment import Environment
 from board import Color
+from agents import HumanAgent
 
 
 class Gameplay(ABC):
@@ -168,7 +169,7 @@ class GuiGameplay(Gameplay):
             self.last_move = action
 
     def __get_action_from_player(self, player):
-        if player is None:
+        if isinstance(player, HumanAgent):
             return self.__get_action_from_real_player()
         else:
             return self.__get_action_from_artificial_player(player)
@@ -267,7 +268,5 @@ class Tournament:
         self.gameplay.swap_players()
 
     def __save_agents_knowledge(self):
-        if self.player1 is not None:
-            self.player1.save_knowledge()
-        if self.player2 is not None:
-            self.player2.save_knowledge()
+        self.player1.save_knowledge()
+        self.player2.save_knowledge()

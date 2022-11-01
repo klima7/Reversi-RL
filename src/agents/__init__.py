@@ -13,4 +13,5 @@ def agent(cls):
     return cls
 
 
+from .human import HumanAgent
 from .random import RandomAgent

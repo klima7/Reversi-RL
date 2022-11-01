@@ -10,8 +10,8 @@ from gameplay import GuiGameplay, NoGuiGameplay
 
 
 @click.command()
-@click.option('-p1', type=click.Choice([*agents.keys(), 'human']), default='human', help='Type of white player')
-@click.option('-p2', type=click.Choice([*agents.keys(), 'human']), default='human', help='Type of black player')
+@click.option('-p1', type=click.Choice(list(agents.keys())), default='human', help='Type of white player')
+@click.option('-p2', type=click.Choice(list(agents.keys())), default='human', help='Type of black player')
 @click.option('-l1', is_flag=True, default=False, help='Enable learning for white player')
 @click.option('-l2', is_flag=True, default=False, help='Enable learning for black player')
 @click.option('-s', '--size', nargs=2, type=int, default=(8, 8), help='Size of the map')
