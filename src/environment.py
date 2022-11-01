@@ -10,8 +10,6 @@ class Environment:
         self.__game_state = game_state
         self.__color = color
         self.__transitions = self.__generate_transitions_data()
-        print(self.__transitions)
-        print(len(self.__transitions))
 
     def get_current_state(self):
         b = self.__game_state.board
