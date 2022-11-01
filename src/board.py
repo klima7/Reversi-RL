@@ -35,6 +35,16 @@ def convert_to_abs_board(rel_board, my_color):
         return -rel_board
 
 
+def convert_to_number(board):
+    number = 0
+    tmp = board.flatten() + 1
+    for elem in tmp:
+        assert(elem in [0, 1, 2])
+        number |= int(elem)
+        number <<= 2
+    return number
+
+
 def get_positions_to_reverse(board, position, color):
     directions = [np.array([i, j]) for i in [-1, 0, 1] for j in [-1, 0, 1] if not (i == 0 and j == 0)]
     discs_to_reverse = []

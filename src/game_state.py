@@ -12,6 +12,9 @@ class GameState:
         self.board = board.create_board(size)
         self.turn_color = Color.BLACK
 
+    def __hash__(self):
+        return self.to_number()
+
     def reset(self):
         self.board = board.create_board(self.size)
         self.turn_color = Color.BLACK
@@ -44,3 +47,8 @@ class GameState:
         plt.matshow(self.board, cmap=cmap)
         plt.title(title)
         plt.show()
+
+    def to_number(self):
+        board_number = board.convert_to_number(self.board)
+        turn_bit = 1 if self.turn_color == Color.BLACK else 0
+        return board_number << 1 | turn_bit
