@@ -218,39 +218,45 @@ class Tournament:
         self.player2 = player2
 
         self.interrupted = False
-        self.wins = None
+        self.results = None
+
+    def play(self):
+        self.__setup()
+        self.__interruptable_play_loop()
+        return self.results
+
+    def __setup(self):
+        self.gameplay.set_players(self.player1, self.player2)
+        self.results = [0, 0, 0]
+
+    def __interruptable_play_loop(self):
+        signal.signal(signal.SIGINT, self.__interrupt_handler)
+        self.__play_loop()
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     def __interrupt_handler(self, _sigint, _frame):
         self.interrupted = True
 
-    def play(self):
-        signal.signal(signal.SIGINT, self.__interrupt_handler)
-
-        self.gameplay.set_players(self.player1, self.player2)
-        self.wins = [0, 0, 0]
-
+    def __play_loop(self):
         iterator = range(self.number) if self.number is not None else count()
         tqdm_iterator = tqdm(iterator, total=self.number, desc='Playing', unit=' play')
 
         for _ in tqdm_iterator:
             self.__play_once()
-            tqdm_iterator.set_postfix_str(f'Wins: {self.wins[0]}/{self.wins[1]}/{self.wins[2]}')
+            tqdm_iterator.set_postfix_str(f'Wins: {self.results[0]}/{self.results[1]}/{self.results[2]}')
 
             if self.interrupted:
                 break
-
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
-        return self.wins
 
     def __play_once(self):
         winner = self.gameplay.play()
 
         if winner is self.player1:
-            self.wins[0] += 1
+            self.results[0] += 1
         elif winner is self.player2:
-            self.wins[1] += 1
+            self.results[1] += 1
         else:
-            self.wins[2] += 1
+            self.results[2] += 1
 
         self.gameplay.reset()
         self.gameplay.swap_players()
