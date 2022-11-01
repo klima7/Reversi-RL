@@ -18,6 +18,10 @@ from gameplay import GuiGameplay, NoGuiGameplay, Tournament
 @click.option('--gui/--nogui', default=True, help='Whether graphical interface should be shown')
 @click.option('-d', '--delay', type=float, default=0.05, help='Minimum delay between player moves in ms')
 def reversi(p1, p2, l1, l2, size, number, gui, delay):
+    if not gui and (p1 == 'human' or p2 == 'human'):
+        print('Error: Human players are not allowed without GUI')
+        return
+
     player1 = agents[p1](size, l1)
     player2 = agents[p2](size, l2)
 
