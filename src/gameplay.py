@@ -1,8 +1,11 @@
 import time
+import signal
 from abc import ABC, abstractmethod
 from multiprocessing.pool import ThreadPool
+from itertools import count
 
 import pygame
+from tqdm import tqdm
 
 from game_state import GameState
 from environment import Environment
@@ -11,17 +14,24 @@ from board import Color
 
 class Gameplay(ABC):
 
-    def __init__(self, size, player_black, player_white, delay):
+    def __init__(self, size, delay):
         self.size = size
         self.game_state = GameState(size)
-
-        self.player_black = player_black
-        self.player_white = player_white
 
         self.env_white = Environment(self.game_state, Color.WHITE)
         self.env_black = Environment(self.game_state, Color.BLACK)
 
         self.delay = delay
+
+        self.player_black = None
+        self.player_white = None
+
+    def set_players(self, player_black, player_white):
+        self.player_black = player_black
+        self.player_white = player_white
+
+    def swap_players(self):
+        self.set_players(self.player_white, self.player_black)
 
     @property
     def _player(self):
@@ -31,8 +41,23 @@ class Gameplay(ABC):
     def _env(self):
         return self.env_white if self.game_state.turn_color == Color.WHITE else self.env_black
 
+    def _get_winner(self):
+        winner_color = self.game_state.get_winner()
+        if winner_color == Color.WHITE:
+            return self.player_white
+        elif winner_color == Color.BLACK:
+            return self.player_black
+        else:
+            return None
+
     @abstractmethod
     def play(self):
+        pass
+
+    def reset(self):
+        self.game_state.reset()
+
+    def dispose(self):
         pass
 
 
@@ -43,7 +68,7 @@ class NoGuiGameplay(Gameplay):
             action = self._player.take_action(self._env)
             self.game_state.make_move(action)
 
-        return self.game_state.get_winner()
+        return self._get_winner()
 
 
 class GuiGameplay(Gameplay):
@@ -51,8 +76,8 @@ class GuiGameplay(Gameplay):
     FIELD_SIZE = 100
     DISC_SIZE = 80
 
-    def __init__(self, size, player_white, player_black, delay=0):
-        super().__init__(size, player_white, player_black, delay)
+    def __init__(self, size, delay=0):
+        super().__init__(size, delay)
 
         self.running = True
         self.screen = None
@@ -61,22 +86,32 @@ class GuiGameplay(Gameplay):
         self.last_move = None
 
     def play(self):
-        self.__init_gui()
+        self.__init_gui_if_needed()
+        self.__update_window_title()
 
         while not self.game_state.is_finished() and self.running:
             self.__collect_events()
             self.__update()
             self.__draw_screen()
 
-        self.__dispose_gui()
-        return self.game_state.get_winner()
+        return self._get_winner()
 
-    def __init_gui(self):
-        pygame.init()
-        self.screen = pygame.display.set_mode([self.size[1] * self.FIELD_SIZE, self.size[0] * self.FIELD_SIZE])
+    def dispose(self):
+        self.__dispose_gui()
+
+    def __init_gui_if_needed(self):
+        if not pygame.get_init():
+            pygame.init()
+            self.screen = pygame.display.set_mode([self.size[1] * self.FIELD_SIZE, self.size[0] * self.FIELD_SIZE])
+
+    def __update_window_title(self):
         white_name = self.__get_player_name(self.player_white)
         black_name = self.__get_player_name(self.player_black)
         pygame.display.set_caption(f'Reversi {self.size[0]}x{self.size[1]} | White: {white_name} | Black: {black_name}')
+
+    def __dispose_gui(self):
+        pygame.quit()
+        self.screen = None
 
     @staticmethod
     def __get_player_name(player):
@@ -85,15 +120,11 @@ class GuiGameplay(Gameplay):
         else:
             return player.agent_name
 
-    def __dispose_gui(self):
-        pygame.quit()
-        self.screen = None
-        self.clock = None
-
-    def __collect_events(self):
+    @staticmethod
+    def __collect_events():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.running = False
+                signal.raise_signal(signal.SIGINT)
 
     def __draw_screen(self):
         self.__draw_board()
@@ -175,3 +206,51 @@ class GuiGameplay(Gameplay):
                 return move_pos
             return None
         return None
+
+
+class Tournament:
+
+    def __init__(self, gameplay, number, player1, player2):
+        self.gameplay = gameplay
+        self.number = number
+
+        self.player1 = player1
+        self.player2 = player2
+
+        self.interrupted = False
+        self.wins = None
+
+    def __interrupt_handler(self, _sigint, _frame):
+        self.interrupted = True
+
+    def play(self):
+        signal.signal(signal.SIGINT, self.__interrupt_handler)
+
+        self.gameplay.set_players(self.player1, self.player2)
+        self.wins = [0, 0, 0]
+
+        iterator = range(self.number) if self.number is not None else count()
+        tqdm_iterator = tqdm(iterator, total=self.number, desc='Playing', unit=' play')
+
+        for _ in tqdm_iterator:
+            self.__play_once()
+            tqdm_iterator.set_postfix_str(f'Wins: {self.wins[0]}/{self.wins[1]}/{self.wins[2]}')
+
+            if self.interrupted:
+                break
+
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        return self.wins
+
+    def __play_once(self):
+        winner = self.gameplay.play()
+
+        if winner is self.player1:
+            self.wins[0] += 1
+        elif winner is self.player2:
+            self.wins[1] += 1
+        else:
+            self.wins[2] += 1
+
+        self.gameplay.reset()
+        self.gameplay.swap_players()

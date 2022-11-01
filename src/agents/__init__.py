@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 class Agent(ABC):
 
     def __init__(self, knowledge, learn):
-        self._knowledge = knowledge
-        self._learn = learn
+        self.knowledge = knowledge
+        self.learn = learn
 
     def initialize(self, env):
         pass

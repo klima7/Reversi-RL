@@ -1,11 +1,20 @@
-from agents import agents, RandomAgent
-from gameplay import GuiGameplay, NoGuiGameplay
+from agents import RandomAgent
+from gameplay import GuiGameplay, NoGuiGameplay, Tournament
 
-if __name__ == '__main__':
-    agent1 = RandomAgent({}, False)
-    agent2 = RandomAgent({}, False)
 
-    gameplay = GuiGameplay((4, 6), None, None, delay=0.1)
-    winner = gameplay.play()
+# agent1 = RandomAgent({}, False)
+# agent2 = RandomAgent({}, False)
+#
+# gameplay = GuiGameplay((4, 6), agent2, agent1, delay=0.1)
+# winner = gameplay.play()
+#
+# print(winner)
 
-    print(winner)
+
+agent1 = RandomAgent({}, False)
+agent2 = RandomAgent({}, False)
+
+gameplay = GuiGameplay((4, 6), delay=0.05)
+tournament = Tournament(gameplay, None, agent1, agent2)
+result = tournament.play()
+print(result)

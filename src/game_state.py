@@ -12,6 +12,10 @@ class GameState:
         self.board = board.create_board(size)
         self.turn_color = Color.BLACK
 
+    def reset(self):
+        self.board = board.create_board(self.size)
+        self.turn_color = Color.BLACK
+
     def get_moves(self):
         moves_array = board.get_legal_moves(self.board, self.turn_color)
         moves_tuple = tuple(map(tuple, moves_array))
