@@ -241,12 +241,17 @@ class Tournament:
         iterator = range(self.number) if self.number is not None else count()
         tqdm_iterator = tqdm(iterator, total=self.number, desc='Playing', unit=' play')
 
-        for _ in tqdm_iterator:
+        for play_number in tqdm_iterator:
             self.__play_once()
             tqdm_iterator.set_postfix_str(f'Wins: {self.results[0]}/{self.results[1]}/{self.results[2]}')
 
+            if play_number % 100 == 0:
+                self.__save_agents_knowledge()
+
             if self.interrupted:
                 break
+
+        self.__save_agents_knowledge()
 
     def __play_once(self):
         winner = self.gameplay.play()
@@ -260,3 +265,9 @@ class Tournament:
 
         self.gameplay.reset()
         self.gameplay.swap_players()
+
+    def __save_agents_knowledge(self):
+        if self.player1 is not None:
+            self.player1.save_knowledge()
+        if self.player2 is not None:
+            self.player2.save_knowledge()
