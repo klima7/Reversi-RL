@@ -61,7 +61,7 @@ def get_positions_to_reverse_in_direction(board, position, color, direction):
     position = np.array(position) + direction
     while is_valid_position(board, position):
         value = board[position[0], position[1]]
-        if value == Color.ANY:
+        if value == 0:
             return []
         elif value == color:
             return discs
@@ -78,7 +78,7 @@ def is_valid_position(board, position):
 def get_legal_moves(board, color):
     empty_positions = np.column_stack(np.nonzero(board == Color.ANY))
     legal_position = [position for position in empty_positions if len(get_positions_to_reverse(board, position, color)) > 0]
-    return np.array(legal_position)
+    return np.array(legal_position).reshape(-1, 2).astype(np.int_)
 
 
 def is_legal_move(board, position, color):
@@ -109,3 +109,11 @@ def no_one_has_moves(board):
 
 def get_winner(board):
     return np.sign(np.sum(board))
+
+
+def plot(board):
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import ListedColormap
+    cmap = ListedColormap(["black", "green", "white"], name='board', N=None)
+    plt.matshow(board, cmap=cmap)
+    plt.show()

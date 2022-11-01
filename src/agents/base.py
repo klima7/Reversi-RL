@@ -8,14 +8,13 @@ class Agent(ABC):
     NAME = None
 
     def __init__(self, size, learn):
-        self.size = size
+        self.__size = size
         self.learn = learn
         self.knowledge = self.__get_knowledge()
-        self.save_knowledge()
 
     def __get_knowledge_path(self):
         root_path = Path(__file__).parent.parent.parent
-        filename = f'{self.size[0]}x{self.size[1]}_{self.NAME}.pickle'
+        filename = f'{self.__size[0]}x{self.__size[1]}_{self.NAME}.pickle'
         return root_path / 'res' / filename
 
     def __get_knowledge(self):

@@ -12,6 +12,9 @@ class GameState:
         self.board = board.create_board(size)
         self.turn_color = Color.BLACK
 
+        # aux
+        self.last_move = None
+
     def __hash__(self):
         return self.to_number()
 
@@ -25,11 +28,12 @@ class GameState:
         return moves_tuple
 
     def make_move(self, move):
-        legal_actions = board.get_legal_moves(self.board, self.turn_color)
-        if move not in legal_actions:
-            raise Exception('Illegal action was requested')
+        legal_moves = board.get_legal_moves(self.board, self.turn_color)
+        if move not in legal_moves:
+            raise Exception('Illegal move was requested')
 
         self.board = board.get_board_after_move(self.board, move, self.turn_color)
+        self.last_move = move
         self.__change_turn()
 
     def is_finished(self):

@@ -67,7 +67,7 @@ class NoGuiGameplay(Gameplay):
     def play(self):
         while not self.game_state.is_finished():
             action = self._player.get_action(self._env)
-            self.game_state.make_move(action)
+            self._env.perform_action(action)
 
         return self._get_winner()
 
@@ -84,7 +84,6 @@ class GuiGameplay(Gameplay):
         self.screen = None
         self.pool = ThreadPool(1)
         self.task = None
-        self.last_move = None
 
     def play(self):
         self.__init_gui_if_needed()
@@ -156,8 +155,8 @@ class GuiGameplay(Gameplay):
                     pygame.draw.circle(self.screen, color, pos, self.DISC_SIZE // 2)
 
     def __draw_last_move(self):
-        if self.last_move is not None:
-            y, x = self.last_move
+        if self.game_state.last_move is not None:
+            y, x = self.game_state.last_move
             x_pos, y_pos = x*self.FIELD_SIZE+self.FIELD_SIZE//2, y*self.FIELD_SIZE+self.FIELD_SIZE//2
             pygame.draw.line(self.screen, (255, 0, 0), (x_pos, 0), (x_pos, self.size[0] * self.FIELD_SIZE), width=2)
             pygame.draw.line(self.screen, (255, 0, 0), (0, y_pos), (self.size[1] * self.FIELD_SIZE, y_pos), width=2)
@@ -165,8 +164,7 @@ class GuiGameplay(Gameplay):
     def __update(self):
         action = self.__get_action_from_player(self._player)
         if action is not None:
-            self.game_state.make_move(action)
-            self.last_move = action
+            self._env.perform_action(action)
 
     def __get_action_from_player(self, player):
         if isinstance(player, HumanAgent):
@@ -204,7 +202,7 @@ class GuiGameplay(Gameplay):
             mouse_pos = pygame.mouse.get_pos()
             move_pos = (mouse_pos[1] // self.FIELD_SIZE, mouse_pos[0] // self.FIELD_SIZE)
             if move_pos in possible_moves:
-                return move_pos
+                return move_pos[0] * self.game_state.size[1] + move_pos[1]
             return None
         return None
 

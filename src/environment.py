@@ -1,41 +1,100 @@
+from copy import deepcopy
+
 import board as board
+from board import Color, Side
 
 
 class Environment:
 
     def __init__(self, game_state, color):
-        self.game_state = game_state
-        self.color = color
+        self.__game_state = game_state
+        self.__color = color
+        self.__transitions = self.__generate_transitions_data()
+        print(self.__transitions)
+        print(len(self.__transitions))
 
     def get_current_state(self):
-        return board.convert_to_rel_board(self.game_state.board, self.color)
+        b = self.__game_state.board
+        rel_b = board.convert_to_rel_board(b, self.__color)
+        return board.convert_to_number(rel_b)
 
     def get_all_states(self):
-        pass  # write yourself
+        return list(self.__transitions.keys())
 
     def get_possible_actions(self, state):
-        board_state = board.convert_to_abs_board(state, self.color)
-        return board.get_legal_moves(board_state, self.color)
+        return list(self.__transitions[state].keys())
 
     def get_next_states(self, state, action):
-        board1 = board.convert_to_abs_board(state, self.color)
-        board2 = board.get_board_after_move(board1, action, self.color)
-        opponent_actions = board.get_legal_moves(board2, -self.color)
-        next_states = {}
-        for opponent_action in opponent_actions:
-            board3 = board.get_board_after_move(board2, opponent_action, -self.color)
-            next_states[board3] = 1 / len(opponent_actions)
-        return next_states
+        tmp_state = self.__transitions[state][action][1]
+        return map(lambda s: s[1], self.__transitions[tmp_state].values())
+
+    def perform_action(self, action):
+        if self.__color != self.__game_state.turn_color:
+            raise Exception('Player tried to perform action outside of his turn')
+        move = divmod(action, self.__game_state.size[1])
+        self.__game_state.make_move(move)
 
     def get_reward(self, state, action, next_state):
-        next_board = board.convert_to_abs_board(state, self.color)
+        next_board = board.convert_to_abs_board(state, self.__color)
         if board.is_finished(next_board):
             winner = board.get_winner(next_board)
-            if winner == self.color:
+            if winner == self.__color:
                 return 1000
-            elif winner == -self.color:
+            elif winner == -self.__color:
                 return -1000
             else:
                 return 0
         else:
             return 0
+
+    def __generate_transitions_data(self):
+        data = {}
+        for rel_board in self.__generate_all_rel_boards():
+            state = board.convert_to_number(rel_board)
+            state_dict = {}
+            moves = board.get_legal_moves(rel_board, Side.ME)
+            actions = moves[:, 0] * rel_board.shape[1] + moves[:, 1]
+            for move, action in zip(moves, actions):
+                me_next_state = board.convert_to_number(board.get_board_after_move(rel_board, move, Side.ME))
+                op_next_state = board.convert_to_number(board.get_board_after_move(rel_board, move, Side.OPPONENT))
+                state_dict[action] = (me_next_state, op_next_state)
+            data[state] = state_dict
+        return data
+
+    def __generate_all_rel_boards(self):
+        rel_boards = []
+        rel_boards_numbers = set()
+
+        for abs_board in self.__generate_all_abs_boards():
+            for color in [Color.WHITE, Color.BLACK]:
+                rel_board = board.convert_to_rel_board(abs_board, color)
+                rel_board_number = board.convert_to_number(rel_board)
+                if rel_board_number in rel_boards_numbers:
+                    continue
+                rel_boards_numbers.add(rel_board_number)
+                rel_boards.append(rel_board)
+
+        return rel_boards
+
+    def __generate_all_abs_boards(self):
+        abs_boards = []
+        game_states = [deepcopy(self.__game_state)]
+        game_states_numbers = set()
+
+        while game_states:
+            game_state = game_states.pop(0)
+
+            game_state_number = game_state.to_number()
+            if game_state_number in game_states_numbers:
+                continue
+
+            game_states_numbers.add(game_state_number)
+            abs_boards.append(game_state.board)
+
+            legal_moves = game_state.get_moves()
+            for legal_move in legal_moves:
+                next_game_state = deepcopy(game_state)
+                next_game_state.make_move(legal_move)
+                game_states.append(next_game_state)
+
+        return abs_boards
