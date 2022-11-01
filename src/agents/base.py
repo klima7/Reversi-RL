@@ -26,6 +26,8 @@ class Agent(ABC):
             return pickle.load(f)
 
     def save_knowledge(self):
+        if len(self.knowledge.keys()) == 0:
+            return
         path = self.__get_knowledge_path()
         with open(path, 'wb') as f:
             return pickle.dump(self.knowledge, f)
