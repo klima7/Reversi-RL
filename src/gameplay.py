@@ -65,7 +65,7 @@ class NoGuiGameplay(Gameplay):
 
     def play(self):
         while not self.game_state.is_finished():
-            action = self._player.take_action(self._env)
+            action = self._player.get_action(self._env)
             self.game_state.make_move(action)
 
         return self._get_winner()
@@ -187,7 +187,7 @@ class GuiGameplay(Gameplay):
     @staticmethod
     def _thread_to_get_action(player, env, delay):
         start_time = time.time()
-        action = player.take_action(env)
+        action = player.get_action(env)
         duration = time.time() - start_time
 
         sleep_time = delay - duration

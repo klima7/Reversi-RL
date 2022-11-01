@@ -10,11 +10,12 @@ from gameplay import GuiGameplay, NoGuiGameplay, Tournament
 #
 # print(winner)
 
+size = (4, 6)
 
-agent1 = RandomAgent({}, False)
-agent2 = RandomAgent({}, False)
+agent1 = RandomAgent(size, False)
+agent2 = RandomAgent(size, False)
 
-gameplay = GuiGameplay((4, 6), delay=0.05)
-tournament = Tournament(gameplay, None, agent1, agent2)
+gameplay = NoGuiGameplay(size, delay=0.05)
+tournament = Tournament(gameplay, 100, agent1, agent2)
 result = tournament.play()
 print(result)
