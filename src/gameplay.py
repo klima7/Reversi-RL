@@ -121,10 +121,10 @@ class GuiGameplay(Gameplay):
         else:
             return player.agent_name
 
-    @staticmethod
-    def __collect_events():
+    def __collect_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                self.running = False
                 signal.raise_signal(signal.SIGINT)
 
     def __draw_screen(self):
