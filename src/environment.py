@@ -1,4 +1,6 @@
 from copy import deepcopy
+from pathlib import Path
+import pickle
 
 import board as board
 from board import Color, Side
@@ -9,7 +11,9 @@ class Environment:
     def __init__(self, game_state, color):
         self.__game_state = game_state
         self.__color = color
-        self.__transitions = self.__generate_transitions_data()
+
+        self.__generate_transitions_if_needed()
+        self.__transitions = self.__load_transitions()
 
     def get_current_state(self):
         b = self.__game_state.board
@@ -45,7 +49,25 @@ class Environment:
         else:
             return 0
 
-    def __generate_transitions_data(self):
+    def __file_location(self):
+        root_path = Path(__file__).parent.parent
+        filename = f'{self.__game_state.size[0]}x{self.__game_state.size[1]}_env.pickle'
+        return root_path / 'res' / filename
+
+    def __generate_transitions_if_needed(self):
+        path = self.__file_location()
+        if not path.exists():
+            transitions = self.__generate_transitions()
+            with open(path, 'wb') as f:
+                return pickle.dump(transitions, f)
+
+    def __load_transitions(self):
+        path = self.__file_location()
+        with open(path, 'rb') as f:
+            return pickle.load(f)
+
+    def __generate_transitions(self):
+        print('Generating environment data...')
         data = {}
         for rel_board in self.__generate_all_rel_boards():
             state = board.convert_to_number(rel_board)
