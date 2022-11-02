@@ -8,12 +8,19 @@ from board import Color, Side
 
 class Environment:
 
+    WIN_REWARD = 1000
+    LOST_REWARD = -1000
+    DRAW_REWARD = 0
+
+    CORNER_REWARD = 0
+    EDGE_REWARD = 0
+
     def __init__(self, game_state, color):
         self.__game_state = game_state
         self.__color = color
 
-        self.__generate_transitions_if_needed()
-        self.__transitions = self.__load_transitions()
+        self.__generate_data_if_needed()
+        self.__data = self.__load_data()
 
     def get_current_state(self):
         b = self.__game_state.board
@@ -37,39 +44,107 @@ class Environment:
         self.__game_state.make_move(move)
 
     def get_reward(self, state, action, next_state):
-        next_board = board.convert_to_abs_board(state, self.__color)
-        if board.is_finished(next_board):
-            winner = board.get_winner(next_board)
-            if winner == self.__color:
-                return 1000
-            elif winner == -self.__color:
-                return -1000
-            else:
-                return 0
+        next_state_reward = 0
+        if next_state in self.__terminal_states[Side.ME]:
+            next_state_reward = self.WIN_REWARD
+        elif next_state in self.__terminal_states[Side.OPPONENT]:
+            next_state_reward = self.LOST_REWARD
+        elif next_state in self.__terminal_states[Side.ANY]:
+            next_state_reward = self.DRAW_REWARD
         else:
-            return 0
+            assert False
+
+        action_reward = 0
+        if action in self.__actions['corner']:
+            action_reward = self.CORNER_REWARD
+        elif action in self.__actions['edge']:
+            action_reward = self.EDGE_REWARD
+
+
+    @property
+    def __transitions(self):
+        return self.__data['transitions']
+
+    @property
+    def __terminal_states(self):
+        return self.__data['terminal_states']
+
+    @property
+    def __actions(self):
+        return self.__data['actions']
 
     def __file_location(self):
         root_path = Path(__file__).parent.parent
         filename = f'{self.__game_state.size[0]}x{self.__game_state.size[1]}_env.pickle'
         return root_path / 'res' / filename
 
-    def __generate_transitions_if_needed(self):
+    def __generate_data_if_needed(self):
         path = self.__file_location()
         if not path.exists():
-            transitions = self.__generate_transitions()
+            data = self.__generate__data()
             with open(path, 'wb') as f:
-                return pickle.dump(transitions, f)
+                return pickle.dump(data, f)
 
-    def __load_transitions(self):
+    def __load_data(self):
         path = self.__file_location()
         with open(path, 'rb') as f:
             return pickle.load(f)
 
-    def __generate_transitions(self):
-        print('Generating environment data...')
+    def __generate__data(self):
+        all_rel_boards = self.__generate_all_rel_boards()
+
+        return {
+            'transitions': self.__generate_transitions(all_rel_boards),
+            'terminal_states': self.__generate_terminal_states(all_rel_boards),
+            'actions': self.__generate_actions()
+        }
+
+    def __generate_actions(self):
+        actions = {
+            'corner': set(),
+            'edge': set(),
+            'other': set()
+        }
+
+        size = self.__game_state.size
+        for y in range(size[0]):
+            for x in range(size[1]):
+                move = (y, x)
+                action = y * size[1] + x
+                classification = self.__classify_move(move)
+                action[classification].add(action)
+
+        return actions
+
+    def __classify_move(self, move):
+        y_edges = [0, self.__game_state.size[0]-1]
+        x_edges = [0, self.__game_state.size[1]-1]
+
+        if move[0] in y_edges and move[1] in x_edges:
+            return 'corner'
+        elif move[0] in y_edges or move[1] in x_edges:
+            return 'edge'
+        else:
+            return 'other'
+
+    def __generate_terminal_states(self, rel_boards):
+        terminal_states = {
+            Side.ME: set(),
+            Side.OPPONENT: set(),
+            Side.ANY: set()
+        }
+
+        for rel_board in rel_boards:
+            state = board.convert_to_number(rel_board)
+            if board.is_finished(rel_board):
+                winner = board.get_winner(rel_board)
+                terminal_states[winner].add(state)
+
+        return terminal_states
+
+    def __generate_transitions(self, rel_boards):
         data = {}
-        for rel_board in self.__generate_all_rel_boards():
+        for rel_board in rel_boards:
             state = board.convert_to_number(rel_board)
             state_dict = {}
             moves = board.get_legal_moves(rel_board, Side.ME)
