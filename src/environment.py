@@ -32,7 +32,9 @@ class Environment:
 
     def get_next_states(self, state, action):
         tmp_state = self.__transitions[state][action][1]
-        return map(lambda s: s[1], self.__transitions[tmp_state].values())
+        states = list(map(lambda s: s[1], self.__transitions[tmp_state].values()))
+        state_prob = 1 / len(states)
+        return {state: state_prob for state in states}
 
     def perform_action(self, action):
         if self.__color != self.__game_state.turn_color:
