@@ -9,6 +9,3 @@ class HumanAgent(Agent):
 
     def get_action(self, env: Environment):
         pass
-
-    def save_knowledge(self):
-        pass

@@ -31,6 +31,9 @@ class Gameplay(ABC):
         self.player_black = player_black
         self.player_white = player_white
 
+        self.player_white.initialize(self.env_white)
+        self.player_black.initialize(self.env_black)
+
     def swap_players(self):
         self.set_players(self.player_white, self.player_black)
 
