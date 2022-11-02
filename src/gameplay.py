@@ -248,12 +248,12 @@ class Tournament:
             tqdm_iterator.set_postfix_str(f'Wins: {self.results[0]}/{self.results[1]}/{self.results[2]}')
 
             if play_number % 100 == 0:
-                self.__save_agents_knowledge()
+                self.__save_agents_data()
 
             if self.interrupted:
                 break
 
-        self.__save_agents_knowledge()
+        self.__save_agents_data()
 
     def __play_once(self):
         winner = self.gameplay.play()
@@ -268,6 +268,6 @@ class Tournament:
         self.gameplay.reset()
         self.gameplay.swap_players()
 
-    def __save_agents_knowledge(self):
-        self.player1.save_knowledge()
-        self.player2.save_knowledge()
+    def __save_agents_data(self):
+        self.player1.save_data()
+        self.player2.save_data()
