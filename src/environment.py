@@ -1,6 +1,7 @@
 from copy import deepcopy
 from pathlib import Path
 import pickle
+import sys
 
 import board as board
 from board import Color, Side
@@ -30,15 +31,13 @@ class Environment:
     def get_possible_actions(self, state):
         return list(self.__transitions[state].keys())
 
-    def get_next_states(self, state, action):
-        print(state, action)
-        print(self.__game_state.turn_color, self.__color)
-        print(board.retrieve_from_number(state, (3, 3)), end='\n\n')
+    def get_next_states(self, temp_state, action):
+        op_has_moves, temp_state = self.__transitions[temp_state][action]
 
-        tmp_state = self.__transitions[state][action]
-        print(board.retrieve_from_number(tmp_state, (3, 3)), end='\n\n')
+        if not op_has_moves:
+            return {temp_state: 1.0}
 
-        states = self.__transitions[tmp_state].values()
+        states = list(map(lambda e: e[1], self.__transitions[temp_state].values()))
         state_prob = 1 / len(states)
         return {state: state_prob for state in states}
 
@@ -75,13 +74,10 @@ class Environment:
         if not path.exists():
             data = self.__generate__data()
             with open(path, 'wb') as f:
-                return pickle.dump(data, f)
+                pickle.dump(data, f)
 
     def __generate__data(self):
         all_rel_boards = self.__generate_all_rel_boards()
-        # for b in all_rel_boards:
-        #     print(b)
-        #     print('|')
 
         return {
             'transitions': self.__generate_transitions(all_rel_boards),
@@ -89,13 +85,7 @@ class Environment:
         }
 
     def __generate_transitions(self, rel_boards):
-        for b in rel_boards:
-            print(b)
-            print()
-        print('-'*200)
-
         all_states = {board.convert_to_number(b) for b in rel_boards}
-        all_next_states = set()
 
         data = {}
         for rel_board in rel_boards:
@@ -105,20 +95,13 @@ class Environment:
             actions = moves[:, 0] * rel_board.shape[1] + moves[:, 1]
             for move, action in zip(moves, actions):
                 next_rel_board = board.get_board_after_move(rel_board, move, Side.ME)
-                next_state = board.convert_to_number(-next_rel_board)
-                state_dict[action] = next_state
+                op_moves = board.get_legal_moves(next_rel_board, Side.OPPONENT)
 
-                all_next_states.add(next_state)
-                if next_state not in all_states:
-                    print('not')
-                    print(rel_board)
-                    print('-')
-                    print(next_rel_board)
-                    print('-')
-                    print(-next_rel_board)
-                    print()
-                else:
-                    print('Present!')
+                op_has_moves = len(op_moves) > 0
+                final_board = -next_rel_board if op_has_moves else next_rel_board
+
+                next_state = board.convert_to_number(final_board)
+                state_dict[action] = (op_has_moves, next_state)
 
             data[state] = state_dict
         return data
@@ -153,7 +136,7 @@ class Environment:
                 continue
             game_states_numbers.add(game_state_number)
 
-            rel_board = board.convert_to_rel_board(game_state.board, Color.WHITE)
+            rel_board = board.convert_to_rel_board(game_state.board, game_state.turn_color)
             rel_board_number = board.convert_to_number(rel_board)
             if rel_board_number not in rel_boards_numbers:
                 rel_boards.append(rel_board)

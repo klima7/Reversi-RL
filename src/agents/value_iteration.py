@@ -11,7 +11,7 @@ class ValueIterAgent(Agent):
 
     def initialize(self, env):
         if not self.data:
-            self.data, _ = self.__value_iteration(env, 0.9, 0.001)
+            self.data, _ = self.__value_iteration(env, 0.9, 0.0001)
 
     def get_action(self, env: Environment):
         state = env.get_current_state()
@@ -36,12 +36,15 @@ class ValueIterAgent(Agent):
                         r = env.get_reward(s, a, s_prim)
                         action_value += p * (r + gamma * V[s_prim])
                     actions_values.append(action_value)
-                V[s] = max(actions_values)
+
+                if actions_values:
+                    V[s] = max(actions_values)
 
             if ValueIterAgent.__should_stop(V, V_prev, theta):
                 break
 
         ValueIterAgent.__policy_improvement(env, policy, V, gamma)
+
         return policy, V
 
     @staticmethod
@@ -58,6 +61,10 @@ class ValueIterAgent(Agent):
 
         for s in mdp.get_all_states():
             actions = mdp.get_possible_actions(s)
+
+            if len(actions) == 0:
+                continue
+
             actions_values = []
 
             for a in actions:
