@@ -49,6 +49,7 @@ class GameState:
     def plot(self, title=None):
         cmap = ListedColormap(["black", "green", "white"], name='board', N=None)
         plt.matshow(self.board, cmap=cmap)
+        plt.clim(-1, 1)
         plt.title(title)
         plt.show()
 

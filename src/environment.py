@@ -31,8 +31,14 @@ class Environment:
         return list(self.__transitions[state].keys())
 
     def get_next_states(self, state, action):
-        tmp_state = self.__transitions[state][action][1]
-        states = list(map(lambda s: s[1], self.__transitions[tmp_state].values()))
+        print(state, action)
+        print(self.__game_state.turn_color, self.__color)
+        print(board.retrieve_from_number(state, (3, 3)), end='\n\n')
+
+        tmp_state = self.__transitions[state][action]
+        print(board.retrieve_from_number(tmp_state, (3, 3)), end='\n\n')
+
+        states = self.__transitions[tmp_state].values()
         state_prob = 1 / len(states)
         return {state: state_prob for state in states}
 
@@ -49,7 +55,7 @@ class Environment:
             return self.LOST_REWARD
         elif next_state in self.__terminal_states[Side.ANY]:
             return self.DRAW_REWARD
-        assert False
+        return 0
 
     @property
     def __transitions(self):
@@ -73,6 +79,9 @@ class Environment:
 
     def __generate__data(self):
         all_rel_boards = self.__generate_all_rel_boards()
+        # for b in all_rel_boards:
+        #     print(b)
+        #     print('|')
 
         return {
             'transitions': self.__generate_transitions(all_rel_boards),
@@ -80,6 +89,14 @@ class Environment:
         }
 
     def __generate_transitions(self, rel_boards):
+        for b in rel_boards:
+            print(b)
+            print()
+        print('-'*200)
+
+        all_states = {board.convert_to_number(b) for b in rel_boards}
+        all_next_states = set()
+
         data = {}
         for rel_board in rel_boards:
             state = board.convert_to_number(rel_board)
@@ -87,9 +104,22 @@ class Environment:
             moves = board.get_legal_moves(rel_board, Side.ME)
             actions = moves[:, 0] * rel_board.shape[1] + moves[:, 1]
             for move, action in zip(moves, actions):
-                me_next_state = board.convert_to_number(board.get_board_after_move(rel_board, move, Side.ME))
-                op_next_state = board.convert_to_number(board.get_board_after_move(rel_board, move, Side.OPPONENT))
-                state_dict[action] = (me_next_state, op_next_state)
+                next_rel_board = board.get_board_after_move(rel_board, move, Side.ME)
+                next_state = board.convert_to_number(-next_rel_board)
+                state_dict[action] = next_state
+
+                all_next_states.add(next_state)
+                if next_state not in all_states:
+                    print('not')
+                    print(rel_board)
+                    print('-')
+                    print(next_rel_board)
+                    print('-')
+                    print(-next_rel_board)
+                    print()
+                else:
+                    print('Present!')
+
             data[state] = state_dict
         return data
 
@@ -112,19 +142,6 @@ class Environment:
         rel_boards = []
         rel_boards_numbers = set()
 
-        for abs_board in self.__generate_all_abs_boards():
-            for color in [Color.WHITE, Color.BLACK]:
-                rel_board = board.convert_to_rel_board(abs_board, color)
-                rel_board_number = board.convert_to_number(rel_board)
-                if rel_board_number in rel_boards_numbers:
-                    continue
-                rel_boards_numbers.add(rel_board_number)
-                rel_boards.append(rel_board)
-
-        return rel_boards
-
-    def __generate_all_abs_boards(self):
-        abs_boards = []
         game_states = [deepcopy(self.__game_state)]
         game_states_numbers = set()
 
@@ -134,9 +151,13 @@ class Environment:
             game_state_number = game_state.to_number()
             if game_state_number in game_states_numbers:
                 continue
-
             game_states_numbers.add(game_state_number)
-            abs_boards.append(game_state.board)
+
+            rel_board = board.convert_to_rel_board(game_state.board, Color.WHITE)
+            rel_board_number = board.convert_to_number(rel_board)
+            if rel_board_number not in rel_boards_numbers:
+                rel_boards.append(rel_board)
+                rel_boards_numbers.add(rel_board_number)
 
             legal_moves = game_state.get_moves()
             for legal_move in legal_moves:
@@ -144,7 +165,7 @@ class Environment:
                 next_game_state.make_move(legal_move)
                 game_states.append(next_game_state)
 
-        return abs_boards
+        return rel_boards
 
     def __load_data(self):
         path = self.__file_location()

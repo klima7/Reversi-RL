@@ -39,10 +39,18 @@ def convert_to_number(board):
     number = 0
     tmp = board.flatten() + 1
     for elem in tmp:
-        assert(elem in [0, 1, 2])
-        number |= int(elem)
         number <<= 2
+        number |= int(elem)
     return number
+
+
+def retrieve_from_number(number, size):
+    values = []
+    for _ in range(size[0] * size[1]):
+        value = number & 0b11
+        values.insert(0, value-1)
+        number >>= 2
+    return np.array(values).astype(np.int_).reshape(size)
 
 
 def get_positions_to_reverse(board, position, color):
@@ -88,6 +96,8 @@ def is_legal_move(board, position, color):
 
 
 def get_board_after_move(board, position, color):
+    if not is_legal_move(board, position, color):
+        raise Exception('Tried to perform illegal move')
     new_board = np.array(board)
     new_board[position[0], position[1]] = color
     reverse_positions = get_positions_to_reverse(new_board, position, color)
@@ -116,4 +126,5 @@ def plot(board):
     from matplotlib.colors import ListedColormap
     cmap = ListedColormap(["black", "green", "white"], name='board', N=None)
     plt.matshow(board, cmap=cmap)
+    plt.clim(-1, 1)
     plt.show()

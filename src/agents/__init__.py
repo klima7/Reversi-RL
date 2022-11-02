@@ -15,3 +15,4 @@ def agent(cls):
 
 from .human import HumanAgent
 from .random import RandomAgent
+from .value_iteration import ValueIterAgent
