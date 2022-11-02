@@ -1,6 +1,3 @@
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-
 import board
 from board import Color
 
@@ -45,13 +42,6 @@ class GameState:
     def __change_turn(self):
         if len(board.get_legal_moves(self.board, -self.turn_color)) > 0:
             self.turn_color = -self.turn_color
-
-    def plot(self, title=None):
-        cmap = ListedColormap(["black", "green", "white"], name='board', N=None)
-        plt.matshow(self.board, cmap=cmap)
-        plt.clim(-1, 1)
-        plt.title(title)
-        plt.show()
 
     def to_number(self):
         board_number = board.convert_to_number(self.board)

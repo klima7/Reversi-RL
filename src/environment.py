@@ -1,10 +1,9 @@
 from copy import deepcopy
 from pathlib import Path
 import pickle
-import sys
 
 import board as board
-from board import Color, Side
+from board import Side
 
 
 class Environment:
@@ -85,8 +84,6 @@ class Environment:
         }
 
     def __generate_transitions(self, rel_boards):
-        all_states = {board.convert_to_number(b) for b in rel_boards}
-
         data = {}
         for rel_board in rel_boards:
             state = board.convert_to_number(rel_board)
