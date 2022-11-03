@@ -39,11 +39,11 @@ class Gameplay(ABC):
 
     @property
     def _player(self):
-        return self.player_white if self.game_state.turn_color == Color.WHITE else self.player_black
+        return self.player_white if self.game_state.turn == Color.WHITE else self.player_black
 
     @property
     def _env(self):
-        return self.env_white if self.game_state.turn_color == Color.WHITE else self.env_black
+        return self.env_white if self.game_state.turn == Color.WHITE else self.env_black
 
     def _get_winner(self):
         winner_color = self.game_state.get_winner()
@@ -151,7 +151,7 @@ class GuiGameplay(Gameplay):
                 disc_color = self.game_state.board[y, x]
                 pos = (x * self.FIELD_SIZE + disc_center_offset, y * self.FIELD_SIZE + disc_center_offset)
                 if disc_color == Color.ANY and (y, x) in possible_moves:
-                    color = [255, 255, 255] if self.game_state.turn_color == Color.WHITE else [0, 0, 0]
+                    color = [255, 255, 255] if self.game_state.turn == Color.WHITE else [0, 0, 0]
                     pygame.draw.circle(self.screen, color, pos, self.DISC_SIZE // 2, width=3)
                 elif disc_color != Color.ANY:
                     color = [255, 255, 255] if disc_color == Color.WHITE else [0, 0, 0]

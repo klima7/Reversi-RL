@@ -13,109 +13,125 @@ class Side:
     ANY = 0
 
 
-def create_board(size):
-    board = np.zeros(size, dtype=np.byte)
-    center_y, center_x = np.array(size) // 2 - 1
-    board[center_y][center_x] = board[center_y+1][center_x+1] = Color.WHITE
-    board[center_y+1][center_x] = board[center_y][center_x+1] = Color.BLACK
-    return board
+class Board:
 
+    def __init__(self, board, number=None):
+        self.__data = board
+        self.__number = number
 
-def convert_to_rel_board(abs_board, my_color):
-    if my_color == Color.WHITE:
-        return np.array(abs_board)
-    else:
-        return -abs_board
+    def __neg__(self):
+        return Board(-self.__data)
 
+    def __hash__(self):
+        return self.number
 
-def convert_to_abs_board(rel_board, my_color):
-    if my_color == Color.WHITE:
-        return np.array(rel_board)
-    else:
-        return -rel_board
+    def __eq__(self, other):
+        return self.number == other.number
 
+    @staticmethod
+    def create_initial(size):
+        board = np.zeros(size, dtype=np.byte)
+        center_y, center_x = np.array(size) // 2 - 1
+        board[center_y][center_x] = board[center_y + 1][center_x + 1] = Color.WHITE
+        board[center_y + 1][center_x] = board[center_y][center_x + 1] = Color.BLACK
+        return Board(board)
 
-def convert_to_number(board):
-    number = 0
-    tmp = board.flatten() + 1
-    for elem in tmp:
-        number <<= 2
-        number |= int(elem)
-    return number
+    @staticmethod
+    def create_from_number(number, size):
+        values = []
+        for _ in range(size[0] * size[1]):
+            value = number & 0b11
+            values.insert(0, value-1)
+            number >>= 2
+        return Board(np.array(values).astype(np.int_).reshape(size), number=number)
 
+    @property
+    def size(self):
+        return self.__data.shape
 
-def retrieve_from_number(number, size):
-    values = []
-    for _ in range(size[0] * size[1]):
-        value = number & 0b11
-        values.insert(0, value-1)
-        number >>= 2
-    return np.array(values).astype(np.int_).reshape(size)
+    @property
+    def number(self):
+        if self.__number is None:
+            self.__number = self.__get_number()
+        return self.__number
 
+    def copy(self):
+        return Board(np.array(self.__data), number=self.number)
 
-def get_positions_to_reverse(board, position, color):
-    directions = [np.array([i, j]) for i in [-1, 0, 1] for j in [-1, 0, 1] if not (i == 0 and j == 0)]
-    discs_to_reverse = []
+    def to_relative(self, my_color):
+        return self.copy() if my_color == Color.WHITE else -self.copy()
 
-    for direction in directions:
-        discs = get_positions_to_reverse_in_direction(board, position, color, direction)
-        discs_to_reverse.extend(discs)
+    def to_absolute(self, my_color):
+        return self.copy() if my_color == Color.WHITE else -self.copy()
 
-    return np.array(discs_to_reverse).reshape(-1, 2).astype(np.int_)
+    def is_valid_position(self, position):
+        return 0 <= position[0] < self.size[0] and 0 <= position[1] < self.size[1]
 
+    def get_legal_moves(self, color):
+        empty_positions = np.column_stack(np.nonzero(self.__data == Color.ANY))
+        legal_position = [position for position in empty_positions if self.__move_reverses_some_discs(position, color)]
+        return np.array(legal_position).reshape(-1, 2).astype(np.int_)
 
-def get_positions_to_reverse_in_direction(board, position, color, direction):
-    discs = []
-    position = np.array(position) + direction
-    while is_valid_position(board, position):
-        value = board[position[0], position[1]]
-        if value == 0:
-            return []
-        elif value == color:
-            return discs
-        else:
-            discs.append(np.copy(position))
-        position += direction
-    return []
+    def make_move(self, position, color):
+        if not self.__is_legal_move(position, color):               # TODO: Remove this check when stable to speed up
+            raise Exception('Tried to perform illegal move')
+        self.__data[position[0], position[1]] = color
+        reverse_positions = self.__get_positions_to_reverse(position, color)
+        self.__data[reverse_positions[:, 0], reverse_positions[:, 1]] = color
+        self.__number = None
+        return self
 
+    def is_finished(self):
+        return self.is_full() or self.no_one_has_moves()
 
-def is_valid_position(board, position):
-    return 0 <= position[0] < board.shape[0] and 0 <= position[1] < board.shape[1]
+    def get_winner(self):
+        return np.sign(np.sum(self.__data))
 
+    def is_full(self):
+        return np.all(self.__data != Color.ANY)
 
-def get_legal_moves(board, color):
-    empty_positions = np.column_stack(np.nonzero(board == Color.ANY))
-    legal_position = [position for position in empty_positions if len(get_positions_to_reverse(board, position, color)) > 0]
-    return np.array(legal_position).reshape(-1, 2).astype(np.int_)
+    def no_one_has_moves(self):
+        return not self.has_any_moves(Color.WHITE) and not self.has_any_moves(Color.BLACK)
 
+    def has_any_moves(self, color):
+        return len(self.get_legal_moves(color)) > 0
 
-def is_legal_move(board, position, color):
-    return is_valid_position(board, position) and \
-           board[position[0], position[1]] == Side.ANY and \
-           len(get_positions_to_reverse(board, position, color)) > 0
+    def __is_legal_move(self, position, color):
+        return self.is_valid_position(position) and \
+               self.__data[position[0], position[1]] == Side.ANY and \
+               self.__move_reverses_some_discs(position, color)
 
+    def __get_positions_to_reverse(self, position, color):
+        directions = [np.array([i, j]) for i in [-1, 0, 1] for j in [-1, 0, 1] if not (i == 0 and j == 0)]
+        discs_to_reverse = []
 
-def get_board_after_move(board, position, color):
-    if not is_legal_move(board, position, color):
-        raise Exception('Tried to perform illegal move')
-    new_board = np.array(board)
-    new_board[position[0], position[1]] = color
-    reverse_positions = get_positions_to_reverse(new_board, position, color)
-    new_board[reverse_positions[:, 0], reverse_positions[:, 1]] = color
-    return new_board
+        for direction in directions:
+            discs = self.__get_positions_to_reverse_in_direction(position, color, direction)
+            discs_to_reverse.extend(discs)
 
+        return np.array(discs_to_reverse).reshape(-1, 2).astype(np.int_)
 
-def is_finished(board):
-    return is_board_full(board) or no_one_has_moves(board)
+    def __get_positions_to_reverse_in_direction(self, position, color, direction):
+        discs = []
+        position = np.array(position) + direction
+        while self.is_valid_position(position):
+            value = self.__data[position[0], position[1]]
+            if value == 0:
+                return []
+            elif value == color:
+                return discs
+            else:
+                discs.append(np.copy(position))
+            position += direction
+        return []
 
+    def __move_reverses_some_discs(self, position, color):
+        return len(self.__get_positions_to_reverse(position, color)) > 0
 
-def is_board_full(board):
-    return np.all(board != Color.ANY)
-
-
-def no_one_has_moves(board):
-    return len(get_legal_moves(board, Color.WHITE)) == 0 and len(get_legal_moves(board, Color.BLACK)) == 0
-
-
-def get_winner(board):
-    return np.sign(np.sum(board))
+    def __get_number(self):
+        number = 0
+        tmp = self.__data.flatten() + 1
+        for elem in tmp:
+            number <<= 2
+            number |= int(elem)
+        return number

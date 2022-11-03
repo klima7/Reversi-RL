@@ -1,60 +1,70 @@
-import board as board_tools
-from board import Color
+from board import Board, Color, Side
 
 
 class GameState:
 
-    def __init__(self, *args):
-
-        if len(args) == 1:
-            self.board = board_tools.create_board(args[0])
-            self.turn_color = Color.BLACK
-
-        elif len(args) == 2:
-            self.board, self.turn_color = args
-
-        else:
-            raise ValueError('Illegal arguments')
-
-        # aux
-        self.last_move = None
+    def __init__(self, board, turn, number=None):
+        self.board = board
+        self.turn = turn
+        self.__number = number
 
     def __hash__(self):
-        return self.to_number()
+        return self.number
+
+    def __eq__(self, other):
+        return self.number == other.number
+
+    @staticmethod
+    def create_initial(size):
+        board = Board.create_initial(size)
+        return GameState(board, Color.BLACK)
 
     @property
     def size(self):
         return self.board.shape
 
+    @property
+    def board_view(self):
+        return self.board.to_relative(self.turn)
+
+    @property
+    def opposite_board_view(self):
+        return self.board.to_relative(-self.turn)
+
+    @property
+    def number(self):
+        if self.__number is None:
+            self.__number = self.__get_number()
+        return self.__number
+
+    def copy(self):
+        return GameState(self.board.copy(), self.turn, number=self.__number)
+
     def reset(self):
-        self.board = board_tools.create_board(self.size)
-        self.turn_color = Color.BLACK
+        self.board = Board.create_initial(self.size)
+        self.turn = Color.BLACK
+        self.__number = None
 
     def get_moves(self):
-        moves_array = board_tools.get_legal_moves(self.board, self.turn_color)
-        moves_tuple = tuple(map(tuple, moves_array))
-        return moves_tuple
+        moves_array = self.board.get_legal_moves(self.turn)
+        return tuple(map(tuple, moves_array))
 
     def make_move(self, move):
-        legal_moves = board_tools.get_legal_moves(self.board, self.turn_color)
-        if move not in legal_moves:
-            raise Exception('Illegal move was requested')
-
-        self.board = board_tools.get_board_after_move(self.board, move, self.turn_color)
-        self.last_move = move
+        self.board = self.board.make_move(move, self.turn)
         self.__change_turn()
+        self.__number = None
+        return self
 
     def is_finished(self):
-        return board_tools.is_finished(self.board)
+        return self.board.is_finished()
 
     def get_winner(self):
-        return board_tools.get_winner(self.board)
+        return self.board.get_winner()
+
+    def __get_number(self):
+        turn_bit = 1 if self.turn == Color.BLACK else 0
+        return self.board.__number << 1 | turn_bit
 
     def __change_turn(self):
-        if len(board_tools.get_legal_moves(self.board, -self.turn_color)) > 0:
-            self.turn_color = -self.turn_color
-
-    def to_number(self):
-        board_number = board_tools.convert_to_number(self.board)
-        turn_bit = 1 if self.turn_color == Color.BLACK else 0
-        return board_number << 1 | turn_bit
+        if self.board.has_any_moves(-self.turn):
+            self.turn = -self.turn
