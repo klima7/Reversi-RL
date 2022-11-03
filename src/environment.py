@@ -15,14 +15,22 @@ class Environment:
     def __init__(self, game_state, color):
         self.__game_state = game_state
         self.__color = color
+        self.__file_location = self.__get_file_location()
 
         self.__generate_data_if_needed()
         self.__data = self.__load_data()
 
+    @property
+    def __transitions(self):
+        return self.__data['transitions']
+
+    @property
+    def __terminal_states(self):
+        return self.__data['terminal_states']
+
     def get_current_state(self):
-        b = self.__game_state.board
-        rel_b = board.convert_to_rel_board(b, self.__color)
-        return board.convert_to_number(rel_b)
+        rel_board = board.convert_to_rel_board(self.__game_state.board, self.__color)
+        return board.convert_to_number(rel_board)
 
     def get_all_states(self):
         return list(self.__transitions.keys())
@@ -35,14 +43,15 @@ class Environment:
 
         if not op_has_moves:
             return {temp_state: 1.0}
-
-        states = list(map(lambda e: e[1], self.__transitions[temp_state].values()))
-        state_prob = 1 / len(states)
-        return {state: state_prob for state in states}
+        else:
+            next_states = list(map(lambda e: e[1], self.__transitions[temp_state].values()))
+            probability = 1 / len(next_states)
+            return {next_state: probability for next_state in next_states}
 
     def perform_action(self, action):
         if self.__color != self.__game_state.turn_color:
             raise Exception('Player tried to perform action outside of his turn')
+
         move = divmod(action, self.__game_state.size[1])
         self.__game_state.make_move(move)
 
@@ -55,42 +64,43 @@ class Environment:
             return self.DRAW_REWARD
         return 0
 
-    @property
-    def __transitions(self):
-        return self.__data['transitions']
+    def __cvt_move_to_action(self, move):
+        return move[0] * self.__game_state.size[1] + move[1]
 
-    @property
-    def __terminal_states(self):
-        return self.__data['terminal_states']
+    def __cvt_action_to_move(self, action):
+        return divmod(action, self.__game_state.size[1])
 
-    def __file_location(self):
+    def __get_file_location(self):
         root_path = Path(__file__).parent.parent
         filename = f'{self.__game_state.size[0]}x{self.__game_state.size[1]}_env.pickle'
         return root_path / 'res' / filename
 
     def __generate_data_if_needed(self):
-        path = self.__file_location()
-        if not path.exists():
+        if not self.__file_location.exists():
+            print('Generating environment...')
             data = self.__generate__data()
-            with open(path, 'wb') as f:
+            with open(self.__file_location, 'wb') as f:
                 pickle.dump(data, f)
+
+    def __load_data(self):
+        print('Loading environment...')
+        with open(self.__file_location, 'rb') as f:
+            return pickle.load(f)
 
     def __generate__data(self):
         all_rel_boards = self.__generate_all_rel_boards()
-
         return {
-            'transitions': self.__generate_transitions(all_rel_boards),
-            'terminal_states': self.__generate_terminal_states(all_rel_boards),
+            'transitions': self.__create_transitions(all_rel_boards),
+            'terminal_states': self.__get_terminal_states(all_rel_boards),
         }
 
-    def __generate_transitions(self, rel_boards):
+    def __create_transitions(self, rel_boards):
         data = {}
         for rel_board in rel_boards:
             state = board.convert_to_number(rel_board)
             state_dict = {}
             moves = board.get_legal_moves(rel_board, Side.ME)
-            actions = moves[:, 0] * rel_board.shape[1] + moves[:, 1]
-            for move, action in zip(moves, actions):
+            for move in moves:
                 next_rel_board = board.get_board_after_move(rel_board, move, Side.ME)
                 op_moves = board.get_legal_moves(next_rel_board, Side.OPPONENT)
 
@@ -98,12 +108,13 @@ class Environment:
                 final_board = -next_rel_board if op_has_moves else next_rel_board
 
                 next_state = board.convert_to_number(final_board)
-                state_dict[action] = (op_has_moves, next_state)
+                state_dict[self.__cvt_move_to_action(move)] = (op_has_moves, next_state)
 
             data[state] = state_dict
         return data
 
-    def __generate_terminal_states(self, rel_boards):
+    @staticmethod
+    def __get_terminal_states(rel_boards):
         terminal_states = {
             Side.ME: set(),
             Side.OPPONENT: set(),
@@ -146,8 +157,3 @@ class Environment:
                 game_states.append(next_game_state)
 
         return rel_boards
-
-    def __load_data(self):
-        path = self.__file_location()
-        with open(path, 'rb') as f:
-            return pickle.load(f)
