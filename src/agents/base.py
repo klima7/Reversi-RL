@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-import pickle
+import _pickle as pickle
 from pathlib import Path
 
 

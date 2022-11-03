@@ -11,7 +11,7 @@ class ValueIterAgent(Agent):
 
     def initialize(self, env):
         if not self.data:
-            self.data, _ = self.__value_iteration(env, 0.9, 0.0001)
+            self.data, _ = self.__value_iteration(env, 0.95, 1e-10)
 
     def get_action(self, env: Environment):
         state = env.get_current_state()
