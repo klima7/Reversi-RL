@@ -8,7 +8,7 @@ import pygame
 from tqdm import tqdm
 
 from game_state import GameState
-from environment import Environment
+from environment import Environment, PreparedEnvironment, LiveEnvironment
 from board import Color
 from agents import HumanAgent
 
@@ -19,8 +19,8 @@ class Gameplay(ABC):
         self.size = size
         self.game_state = GameState(size)
 
-        self.env_white = Environment(self.game_state, Color.WHITE)
-        self.env_black = Environment(self.game_state, Color.BLACK)
+        self.env_white = LiveEnvironment(self.game_state, Color.WHITE)
+        self.env_black = LiveEnvironment(self.game_state, Color.BLACK)
 
         self.delay = delay
 

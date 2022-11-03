@@ -11,6 +11,7 @@ class ValueIterAgent(Agent):
 
     def initialize(self, env):
         if not self.data:
+            print('Learning strategy...')
             self.data, _ = self.__value_iteration(env, 0.95, 1e-10)
 
     def get_action(self, env: Environment):

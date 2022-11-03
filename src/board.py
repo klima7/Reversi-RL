@@ -44,6 +44,15 @@ def convert_to_number(board):
     return number
 
 
+def retrieve_from_number(number, size):
+    values = []
+    for _ in range(size[0] * size[1]):
+        value = number & 0b11
+        values.insert(0, value-1)
+        number >>= 2
+    return np.array(values).astype(np.int_).reshape(size)
+
+
 def get_positions_to_reverse(board, position, color):
     directions = [np.array([i, j]) for i in [-1, 0, 1] for j in [-1, 0, 1] if not (i == 0 and j == 0)]
     discs_to_reverse = []
