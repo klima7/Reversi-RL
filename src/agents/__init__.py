@@ -1,7 +1,9 @@
 from .base import Agent
 
 
-agents = {}
+agents = {
+    'human': lambda size, learn: None
+}
 
 
 def agent(cls):
@@ -13,6 +15,5 @@ def agent(cls):
     return cls
 
 
-from .human import HumanAgent
 from .random import RandomAgent
 from .value_iteration import ValueIterAgent

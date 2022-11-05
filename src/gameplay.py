@@ -10,7 +10,6 @@ from tqdm import tqdm
 from game_state import GameState
 from environment import Environment
 from board import Color
-from agents import HumanAgent
 
 
 class Gameplay(ABC):
@@ -29,8 +28,10 @@ class Gameplay(ABC):
         self._player_black = player_black
         self._player_white = player_white
 
-        self._player_white.initialize(self._env)
-        self._player_black.initialize(self._env)
+        if self._player_white is not None:
+            self._player_white.initialize(self._env)
+        if self._player_black is not None:
+            self._player_black.initialize(self._env)
 
     def swap_players(self):
         self.set_players(self._player_white, self._player_black)
@@ -172,7 +173,7 @@ class GuiGameplay(Gameplay):
             self.last_move = move
 
     def __get_action_from_player(self, player):
-        if isinstance(player, HumanAgent):
+        if player is None:
             return self.__get_action_from_real_player()
         else:
             return self.__get_action_from_artificial_player(player)
@@ -271,5 +272,7 @@ class Tournament:
         self.gameplay.swap_players()
 
     def __save_agents_data(self):
-        self.player1.save_data()
-        self.player2.save_data()
+        if self.player1 is not None:
+            self.player1.save_data()
+        if self.player2 is not None:
+            self.player2.save_data()
