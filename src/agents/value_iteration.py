@@ -12,13 +12,13 @@ class ValueIterAgent(Agent):
     def initialize(self, env):
         if not self.data:
             print('Learning strategy...')
-            self.data, _ = self.__value_iteration(env, 0.95, 1e-4)
+            self.data = ValueIterAgent.__learn_strategy(env, 0.95, 1e-4)
 
     def get_action(self, state, env: Environment):
         return self.data[state]
 
     @staticmethod
-    def __value_iteration(env, gamma, theta):
+    def __learn_strategy(env, gamma, theta):
         V = dict()
         policy = dict()
 
@@ -40,15 +40,13 @@ class ValueIterAgent(Agent):
                 if actions_values:
                     V[s] = max(actions_values)
 
-            if ValueIterAgent.__should_stop(V, V_prev, theta):
+            if ValueIterAgent.__should_stop_learning(V, V_prev, theta):
                 break
 
-        ValueIterAgent.__policy_improvement(env, policy, V, gamma)
-
-        return policy, V
+        return ValueIterAgent.__create_policy(env, V, gamma)
 
     @staticmethod
-    def __should_stop(V1, V2, theta):
+    def __should_stop_learning(V1, V2, theta):
         v1_values = np.array(list(V1.values()))
         v2_values = np.array(list(V2.values()))
         diff = np.abs(v1_values - v2_values)
@@ -56,29 +54,26 @@ class ValueIterAgent(Agent):
         return min_diff < theta
 
     @staticmethod
-    def __policy_improvement(mdp, policy, value_function, gamma):
-        policy_stable = True
+    def __create_policy(mdp, value_function, gamma):
+        policy = {}
 
-        for s in mdp.get_all_states():
-            actions = mdp.get_possible_actions(s)
+        for state in mdp.get_all_states():
+            actions = mdp.get_possible_actions(state)
 
             if len(actions) == 0:
                 continue
 
             actions_values = []
 
-            for a in actions:
+            for action in actions:
                 action_value = 0
-                for s_prim, p in mdp.get_next_states(s, a).items():
-                    r = mdp.get_reward(s, a, s_prim)
-                    action_value += p * (r + gamma * value_function[s_prim])
+                for new_state, probability in mdp.get_next_states(state, action).items():
+                    reward = mdp.get_reward(state, action, new_state)
+                    action_value += probability * (reward + gamma * value_function[new_state])
                 actions_values.append(action_value)
 
             best_action_index = np.argmax(actions_values)
             best_action = actions[best_action_index]
+            policy[state] = best_action
 
-            if policy[s] != best_action:
-                policy[s] = best_action
-                policy_stable = False
-
-        return policy_stable
+        return policy
