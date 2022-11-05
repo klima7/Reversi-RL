@@ -21,7 +21,7 @@ class GameState:
 
     @property
     def size(self):
-        return self.board.shape
+        return self.board.size
 
     @property
     def board_view(self):
@@ -63,7 +63,7 @@ class GameState:
 
     def __get_number(self):
         turn_bit = 1 if self.turn == Color.BLACK else 0
-        return self.board.__number << 1 | turn_bit
+        return self.board.number << 1 | turn_bit
 
     def __change_turn(self):
         if self.board.has_any_moves(-self.turn):

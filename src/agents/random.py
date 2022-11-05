@@ -9,7 +9,6 @@ class RandomAgent(Agent):
 
     NAME = 'random'
 
-    def get_action(self, env: Environment):
-        state = env.get_current_state()
+    def get_action(self, state, env: Environment):
         actions = env.get_possible_actions(state)
         return random.choice(actions)

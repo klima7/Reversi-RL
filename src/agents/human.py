@@ -7,5 +7,5 @@ class HumanAgent(Agent):
 
     NAME = 'human'
 
-    def get_action(self, env: Environment):
+    def get_action(self, state, env: Environment):
         pass

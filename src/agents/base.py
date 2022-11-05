@@ -18,7 +18,7 @@ class Agent(ABC):
         pass
 
     @abstractmethod
-    def get_action(self, env):
+    def get_action(self, state, env):
         pass
 
     def save_data(self):

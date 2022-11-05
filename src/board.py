@@ -19,6 +19,9 @@ class Board:
         self.__data = board
         self.__number = number
 
+    def __getitem__(self, item):
+        return self.__data[item[0], item[1]]
+
     def __neg__(self):
         return Board(-self.__data)
 

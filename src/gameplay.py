@@ -8,7 +8,7 @@ import pygame
 from tqdm import tqdm
 
 from game_state import GameState
-from environment import Environment, PreparedEnvironment, LiveEnvironment
+from environment import Environment
 from board import Color
 from agents import HumanAgent
 
@@ -17,12 +17,10 @@ class Gameplay(ABC):
 
     def __init__(self, size, delay):
         self.size = size
-        self.game_state = GameState(size)
-
-        self.env_white = LiveEnvironment(self.game_state, Color.WHITE)
-        self.env_black = LiveEnvironment(self.game_state, Color.BLACK)
-
         self.delay = delay
+
+        self.game_state = GameState.create_initial(size)
+        self.env = Environment(size)
 
         self.player_black = None
         self.player_white = None
@@ -31,8 +29,8 @@ class Gameplay(ABC):
         self.player_black = player_black
         self.player_white = player_white
 
-        self.player_white.initialize(self.env_white)
-        self.player_black.initialize(self.env_black)
+        self.player_white.initialize(self.env)
+        self.player_black.initialize(self.env)
 
     def swap_players(self):
         self.set_players(self.player_white, self.player_black)
@@ -42,8 +40,8 @@ class Gameplay(ABC):
         return self.player_white if self.game_state.turn == Color.WHITE else self.player_black
 
     @property
-    def _env(self):
-        return self.env_white if self.game_state.turn == Color.WHITE else self.env_black
+    def _state(self):
+        return self.env.cvt_board_to_state(self.game_state.board_view)
 
     def _get_winner(self):
         winner_color = self.game_state.get_winner()
@@ -69,8 +67,9 @@ class NoGuiGameplay(Gameplay):
 
     def play(self):
         while not self.game_state.is_finished():
-            action = self._player.get_action(self._env)
-            self._env.perform_action(action)
+            action = self._player.get_action(self._state, self.env)
+            move = self.env.cvt_action_to_move(action)
+            self.game_state.make_move(move)
 
         return self._get_winner()
 
@@ -87,6 +86,7 @@ class GuiGameplay(Gameplay):
         self.screen = None
         self.pool = ThreadPool(1)
         self.task = None
+        self.last_move = None
 
     def play(self):
         self.__init_gui_if_needed()
@@ -158,8 +158,8 @@ class GuiGameplay(Gameplay):
                     pygame.draw.circle(self.screen, color, pos, self.DISC_SIZE // 2)
 
     def __draw_last_move(self):
-        if self.game_state.last_move is not None:
-            y, x = self.game_state.last_move
+        if self.last_move is not None:
+            y, x = self.last_move
             x_pos, y_pos = x*self.FIELD_SIZE+self.FIELD_SIZE//2, y*self.FIELD_SIZE+self.FIELD_SIZE//2
             pygame.draw.line(self.screen, (255, 0, 0), (x_pos, 0), (x_pos, self.size[0] * self.FIELD_SIZE), width=2)
             pygame.draw.line(self.screen, (255, 0, 0), (0, y_pos), (self.size[1] * self.FIELD_SIZE, y_pos), width=2)
@@ -167,7 +167,9 @@ class GuiGameplay(Gameplay):
     def __update(self):
         action = self.__get_action_from_player(self._player)
         if action is not None:
-            self._env.perform_action(action)
+            move = self.env.cvt_action_to_move(action)
+            self.game_state.make_move(move)
+            self.last_move = move
 
     def __get_action_from_player(self, player):
         if isinstance(player, HumanAgent):
@@ -177,7 +179,7 @@ class GuiGameplay(Gameplay):
 
     def __get_action_from_artificial_player(self, player):
         if self.task is None:
-            self.task = self.pool.apply_async(GuiGameplay._thread_to_get_action, [player, self._env, self.delay])
+            self.task = self.pool.apply_async(GuiGameplay._thread_to_get_action, [player, self._state, self.env, self.delay])
 
         if self.task.ready():
             action = self.task.get()
@@ -187,9 +189,9 @@ class GuiGameplay(Gameplay):
         return None
 
     @staticmethod
-    def _thread_to_get_action(player, env, delay):
+    def _thread_to_get_action(player, state, env, delay):
         start_time = time.time()
-        action = player.get_action(env)
+        action = player.get_action(state, env)
         duration = time.time() - start_time
 
         sleep_time = delay - duration
@@ -205,7 +207,7 @@ class GuiGameplay(Gameplay):
             mouse_pos = pygame.mouse.get_pos()
             move_pos = (mouse_pos[1] // self.FIELD_SIZE, mouse_pos[0] // self.FIELD_SIZE)
             if move_pos in possible_moves:
-                return move_pos[0] * self.game_state.size[1] + move_pos[1]
+                return self.env.cvt_move_to_action(move_pos)
             return None
         return None
 

@@ -12,10 +12,9 @@ class ValueIterAgent(Agent):
     def initialize(self, env):
         if not self.data:
             print('Learning strategy...')
-            self.data, _ = self.__value_iteration(env, 0.95, 1e-10)
+            self.data, _ = self.__value_iteration(env, 0.95, 1e-4)
 
-    def get_action(self, env: Environment):
-        state = env.get_current_state()
+    def get_action(self, state, env: Environment):
         return self.data[state]
 
     @staticmethod
