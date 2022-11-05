@@ -29,8 +29,10 @@ class Gameplay(ABC):
         self._player_white = player_white
 
         if self._player_white is not None:
+            self._player_white.load_data()
             self._player_white.initialize(self._env)
         if self._player_black is not None:
+            self._player_white.load_data()
             self._player_black.initialize(self._env)
 
     def swap_players(self):

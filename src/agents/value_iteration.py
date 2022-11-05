@@ -8,57 +8,71 @@ from environment import Environment
 class ValueIterAgent(Agent):
 
     NAME = 'value_iter'
+    DEFAULT_GAMMA = 0.95
+    DEFAULT_THETA = 1e-4
+
+    def __init__(self, size, learn, gamma=DEFAULT_GAMMA, theta=DEFAULT_THETA):
+        super().__init__(size, learn)
+        self.__gamma = gamma
+        self.__theta = theta
+        self.__policy = None
 
     def initialize(self, env):
-        if not self.data:
-            print('Learning strategy...')
-            self.data = ValueIterAgent.__learn_strategy(env, 0.95, 1e-4)
+        super().initialize(env)
+        if self.__policy is None:
+            self.__policy = ValueIterAgent.__learn_policy(env, self.__gamma, self.__theta)
 
     def get_action(self, state, env: Environment):
-        return self.data[state]
+        return self.__policy[state]
+
+    def get_data_to_save(self):
+        return self.__policy
+
+    def set_saved_data(self, data):
+        self.__policy = data
 
     @staticmethod
-    def __learn_strategy(env, gamma, theta):
-        V = dict()
+    def __learn_policy(env, gamma, theta):
+        values = dict()
         policy = dict()
 
         for current_state in env.get_all_states():
-            V[current_state] = 0
+            values[current_state] = 0
             policy[current_state] = 0
 
         while True:
-            V_prev = dict(V)
+            values_prev = dict(values)
             for s in env.get_all_states():
                 actions_values = []
                 for a in env.get_possible_actions(s):
                     action_value = 0
                     for s_prim, p in env.get_next_states(s, a).items():
                         r = env.get_reward(s, a, s_prim)
-                        action_value += p * (r + gamma * V[s_prim])
+                        action_value += p * (r + gamma * values[s_prim])
                     actions_values.append(action_value)
 
                 if actions_values:
-                    V[s] = max(actions_values)
+                    values[s] = max(actions_values)
 
-            if ValueIterAgent.__should_stop_learning(V, V_prev, theta):
+            if ValueIterAgent.__should_stop_learning(values, values_prev, theta):
                 break
 
-        return ValueIterAgent.__create_policy(env, V, gamma)
+        return ValueIterAgent.__create_policy(env, values, gamma)
 
     @staticmethod
-    def __should_stop_learning(V1, V2, theta):
-        v1_values = np.array(list(V1.values()))
-        v2_values = np.array(list(V2.values()))
+    def __should_stop_learning(values1, values2, theta):
+        v1_values = np.array(list(values1.values()))
+        v2_values = np.array(list(values2.values()))
         diff = np.abs(v1_values - v2_values)
         min_diff = np.max(diff)
         return min_diff < theta
 
     @staticmethod
-    def __create_policy(mdp, value_function, gamma):
+    def __create_policy(env, value_function, gamma):
         policy = {}
 
-        for state in mdp.get_all_states():
-            actions = mdp.get_possible_actions(state)
+        for state in env.get_all_states():
+            actions = env.get_possible_actions(state)
 
             if len(actions) == 0:
                 continue
@@ -67,8 +81,8 @@ class ValueIterAgent(Agent):
 
             for action in actions:
                 action_value = 0
-                for new_state, probability in mdp.get_next_states(state, action).items():
-                    reward = mdp.get_reward(state, action, new_state)
+                for new_state, probability in env.get_next_states(state, action).items():
+                    reward = env.get_reward(state, action, new_state)
                     action_value += probability * (reward + gamma * value_function[new_state])
                 actions_values.append(action_value)
 
