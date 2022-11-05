@@ -7,9 +7,9 @@ class Agent(ABC):
 
     NAME = None
 
-    def __init__(self, size, learn):
+    def __init__(self, size):
         self._size = size
-        self._learn = learn
+        self._learn = True
         self.__data_path = self.__get_data_path()
 
     def initialize(self, env):
@@ -37,6 +37,9 @@ class Agent(ABC):
             return
         with open(self.__data_path, 'wb') as f:
             return pickle.dump(data_to_save, f)
+
+    def set_learn(self, learn):
+        self._learn = learn
 
     def __get_data_path(self):
         root_path = Path(__file__).parent.parent.parent

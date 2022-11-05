@@ -22,8 +22,11 @@ def reversi(p1, p2, l1, l2, size, number, gui, delay):
         print('Error: Human players are not allowed without GUI')
         return
 
-    player1 = agents[p1](size, l1)
-    player2 = agents[p2](size, l2)
+    player1 = agents[p1](size)
+    player2 = agents[p2](size)
+
+    player1.set_learn(l1)
+    player2.set_learn(l2)
 
     gameplay_class = GuiGameplay if gui else NoGuiGameplay
     gameplay = gameplay_class(size, delay)

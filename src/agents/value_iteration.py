@@ -11,8 +11,8 @@ class ValueIterAgent(Agent):
     DEFAULT_GAMMA = 0.95
     DEFAULT_THETA = 1e-4
 
-    def __init__(self, size, learn, gamma=DEFAULT_GAMMA, theta=DEFAULT_THETA):
-        super().__init__(size, learn)
+    def __init__(self, size, gamma=DEFAULT_GAMMA, theta=DEFAULT_THETA):
+        super().__init__(size)
         self.__gamma = gamma
         self.__theta = theta
         self.__policy = None
