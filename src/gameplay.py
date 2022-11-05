@@ -16,39 +16,39 @@ from agents import HumanAgent
 class Gameplay(ABC):
 
     def __init__(self, size, delay):
-        self.size = size
-        self.delay = delay
+        self._size = size
+        self._delay = delay
 
-        self.game_state = GameState.create_initial(size)
-        self.env = Environment(size)
+        self._game_state = GameState.create_initial(size)
+        self._env = Environment(size)
 
-        self.player_black = None
-        self.player_white = None
+        self._player_black = None
+        self._player_white = None
 
     def set_players(self, player_black, player_white):
-        self.player_black = player_black
-        self.player_white = player_white
+        self._player_black = player_black
+        self._player_white = player_white
 
-        self.player_white.initialize(self.env)
-        self.player_black.initialize(self.env)
+        self._player_white.initialize(self._env)
+        self._player_black.initialize(self._env)
 
     def swap_players(self):
-        self.set_players(self.player_white, self.player_black)
+        self.set_players(self._player_white, self._player_black)
 
     @property
-    def _player(self):
-        return self.player_white if self.game_state.turn == Color.WHITE else self.player_black
+    def _current_player(self):
+        return self._player_white if self._game_state.turn == Color.WHITE else self._player_black
 
     @property
-    def _state(self):
-        return self.env.cvt_board_to_state(self.game_state.board_view)
+    def _current_state(self):
+        return self._env.cvt_board_to_state(self._game_state.board_view)
 
     def _get_winner(self):
-        winner_color = self.game_state.get_winner()
+        winner_color = self._game_state.get_winner()
         if winner_color == Color.WHITE:
-            return self.player_white
+            return self._player_white
         elif winner_color == Color.BLACK:
-            return self.player_black
+            return self._player_black
         else:
             return None
 
@@ -57,7 +57,7 @@ class Gameplay(ABC):
         pass
 
     def reset(self):
-        self.game_state.reset()
+        self._game_state.reset()
 
     def dispose(self):
         pass
@@ -66,10 +66,10 @@ class Gameplay(ABC):
 class NoGuiGameplay(Gameplay):
 
     def play(self):
-        while not self.game_state.is_finished():
-            action = self._player.get_action(self._state, self.env)
-            move = self.env.cvt_action_to_move(action)
-            self.game_state.make_move(move)
+        while not self._game_state.is_finished():
+            action = self._current_player.get_action(self._current_state, self._env)
+            move = self._env.cvt_action_to_move(action)
+            self._game_state.make_move(move)
 
         return self._get_winner()
 
@@ -92,7 +92,7 @@ class GuiGameplay(Gameplay):
         self.__init_gui_if_needed()
         self.__update_window_title()
 
-        while not self.game_state.is_finished() and self.running:
+        while not self._game_state.is_finished() and self.running:
             self.__collect_events()
             self.__update()
             self.__draw_screen()
@@ -105,12 +105,12 @@ class GuiGameplay(Gameplay):
     def __init_gui_if_needed(self):
         if not pygame.get_init():
             pygame.init()
-            self.screen = pygame.display.set_mode([self.size[1] * self.FIELD_SIZE, self.size[0] * self.FIELD_SIZE])
+            self.screen = pygame.display.set_mode([self._size[1] * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE])
 
     def __update_window_title(self):
-        white_name = self.__get_player_name(self.player_white)
-        black_name = self.__get_player_name(self.player_black)
-        pygame.display.set_caption(f'Reversi {self.size[0]}x{self.size[1]} | White: {white_name} | Black: {black_name}')
+        white_name = self.__get_player_name(self._player_white)
+        black_name = self.__get_player_name(self._player_black)
+        pygame.display.set_caption(f'Reversi {self._size[0]}x{self._size[1]} | White: {white_name} | Black: {black_name}')
 
     def __dispose_gui(self):
         pygame.quit()
@@ -137,21 +137,21 @@ class GuiGameplay(Gameplay):
 
     def __draw_board(self):
         self.screen.fill((0, 128, 0))
-        pygame.draw.rect(self.screen, (0, 150, 0), (0, 0, self.size[1] * self.FIELD_SIZE, self.size[0] * self.FIELD_SIZE), width=3)
-        for y in range(1, self.size[0]):
-            pygame.draw.line(self.screen, (0, 150, 0), (0, y*self.FIELD_SIZE), (self.size[1] * self.FIELD_SIZE, y*self.FIELD_SIZE), width=3)
-        for x in range(1, self.size[1]):
-            pygame.draw.line(self.screen, (0, 150, 0), (x*self.FIELD_SIZE, 0), (x*self.FIELD_SIZE, self.size[0] * self.FIELD_SIZE), width=3)
+        pygame.draw.rect(self.screen, (0, 150, 0), (0, 0, self._size[1] * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE), width=3)
+        for y in range(1, self._size[0]):
+            pygame.draw.line(self.screen, (0, 150, 0), (0, y*self.FIELD_SIZE), (self._size[1] * self.FIELD_SIZE, y * self.FIELD_SIZE), width=3)
+        for x in range(1, self._size[1]):
+            pygame.draw.line(self.screen, (0, 150, 0), (x*self.FIELD_SIZE, 0), (x * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE), width=3)
 
     def __draw_discs(self):
-        possible_moves = self.game_state.get_moves()
+        possible_moves = self._game_state.get_moves()
         disc_center_offset = self.FIELD_SIZE // 2
-        for y in range(self.size[0]):
-            for x in range(self.size[1]):
-                disc_color = self.game_state.board[y, x]
+        for y in range(self._size[0]):
+            for x in range(self._size[1]):
+                disc_color = self._game_state.board[y, x]
                 pos = (x * self.FIELD_SIZE + disc_center_offset, y * self.FIELD_SIZE + disc_center_offset)
                 if disc_color == Color.ANY and (y, x) in possible_moves:
-                    color = [255, 255, 255] if self.game_state.turn == Color.WHITE else [0, 0, 0]
+                    color = [255, 255, 255] if self._game_state.turn == Color.WHITE else [0, 0, 0]
                     pygame.draw.circle(self.screen, color, pos, self.DISC_SIZE // 2, width=3)
                 elif disc_color != Color.ANY:
                     color = [255, 255, 255] if disc_color == Color.WHITE else [0, 0, 0]
@@ -161,14 +161,14 @@ class GuiGameplay(Gameplay):
         if self.last_move is not None:
             y, x = self.last_move
             x_pos, y_pos = x*self.FIELD_SIZE+self.FIELD_SIZE//2, y*self.FIELD_SIZE+self.FIELD_SIZE//2
-            pygame.draw.line(self.screen, (255, 0, 0), (x_pos, 0), (x_pos, self.size[0] * self.FIELD_SIZE), width=2)
-            pygame.draw.line(self.screen, (255, 0, 0), (0, y_pos), (self.size[1] * self.FIELD_SIZE, y_pos), width=2)
+            pygame.draw.line(self.screen, (255, 0, 0), (x_pos, 0), (x_pos, self._size[0] * self.FIELD_SIZE), width=2)
+            pygame.draw.line(self.screen, (255, 0, 0), (0, y_pos), (self._size[1] * self.FIELD_SIZE, y_pos), width=2)
 
     def __update(self):
-        action = self.__get_action_from_player(self._player)
+        action = self.__get_action_from_player(self._current_player)
         if action is not None:
-            move = self.env.cvt_action_to_move(action)
-            self.game_state.make_move(move)
+            move = self._env.cvt_action_to_move(action)
+            self._game_state.make_move(move)
             self.last_move = move
 
     def __get_action_from_player(self, player):
@@ -179,7 +179,7 @@ class GuiGameplay(Gameplay):
 
     def __get_action_from_artificial_player(self, player):
         if self.task is None:
-            self.task = self.pool.apply_async(GuiGameplay._thread_to_get_action, [player, self._state, self.env, self.delay])
+            self.task = self.pool.apply_async(GuiGameplay.__thread_to_get_action, [player, self._current_state, self._env, self._delay])
 
         if self.task.ready():
             action = self.task.get()
@@ -189,7 +189,7 @@ class GuiGameplay(Gameplay):
         return None
 
     @staticmethod
-    def _thread_to_get_action(player, state, env, delay):
+    def __thread_to_get_action(player, state, env, delay):
         start_time = time.time()
         action = player.get_action(state, env)
         duration = time.time() - start_time
@@ -201,13 +201,13 @@ class GuiGameplay(Gameplay):
         return action
 
     def __get_action_from_real_player(self):
-        possible_moves = self.game_state.get_moves()
+        possible_moves = self._game_state.get_moves()
         pressed = pygame.mouse.get_pressed()
         if pressed[0]:
             mouse_pos = pygame.mouse.get_pos()
             move_pos = (mouse_pos[1] // self.FIELD_SIZE, mouse_pos[0] // self.FIELD_SIZE)
             if move_pos in possible_moves:
-                return self.env.cvt_move_to_action(move_pos)
+                return self._env.cvt_move_to_action(move_pos)
             return None
         return None
 
