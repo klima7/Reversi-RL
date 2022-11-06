@@ -91,25 +91,40 @@ class GuiGameplay(Gameplay):
 
         self.__running = True
         self.__screen = None
-        self.__font = None
+        self.__turn_font = None
+        self.__winner_font = None
         self.__pool = ThreadPool(1)
         self.__task = None
         self.__last_move = None
         self.__pending_move = None
         self.__pending_move_time = None
+        self.__finish_time = None
 
     def play(self):
         self.__init_gui_if_needed()
 
-        while not self._game_state.is_finished() and self.__running:
+        while self.__should_run():
             self.__collect_events()
             self.__update()
             self.__draw_screen()
 
         return self._get_winner()
 
+    def reset(self):
+        super().reset()
+        self.__running = True
+        self.__last_move = None
+        self.__pending_move = None
+        self.__pending_move_time = None
+        self.__finish_time = None
+
     def dispose(self):
         self.__dispose_gui()
+
+    def __should_run(self):
+        in_progress = not self._game_state.is_finished()
+        cooldown_not_elapsed = self.__finish_time is not None and self.__finish_time + self._delay > time.time()
+        return (in_progress or cooldown_not_elapsed) and self.__running
 
     def __init_gui_if_needed(self):
         if not pygame.get_init():
@@ -118,7 +133,8 @@ class GuiGameplay(Gameplay):
             screen_width = self._size[1] * self.FIELD_SIZE
             screen_height = self._size[0] * self.FIELD_SIZE + 40
             self.__screen = pygame.display.set_mode([screen_width, screen_height])
-            self.__font = pygame.font.Font(pygame.font.get_default_font(), 20)
+            self.__turn_font = pygame.font.Font(pygame.font.get_default_font(), 20)
+            self.__winner_font = pygame.font.Font(pygame.font.get_default_font(), 40)
 
     def __dispose_gui(self):
         pygame.quit()
@@ -138,11 +154,47 @@ class GuiGameplay(Gameplay):
                 signal.raise_signal(signal.SIGINT)
 
     def __draw_screen(self):
+        if self._game_state.is_finished():
+            self.__draw_finish_screen()
+        else:
+            self.__draw_standard_screen()
+
+        pygame.display.flip()
+
+    def __draw_standard_screen(self):
         self.__draw_board()
         self.__draw_discs()
         self.__draw_last_move()
         self.__draw_turn()
-        pygame.display.flip()
+
+    def __draw_finish_screen(self):
+        winner = self._game_state.get_winner()
+        text = self.__get_winner_text(winner)
+        color = self.__get_winner_color(winner)
+
+        text_surface = self.__winner_font.render(text, True, (0, 0, 0))
+        pos = ((self.__screen.get_width() - text_surface.get_width()) // 2, (self.__screen.get_height() - text_surface.get_height()) // 2)
+
+        self.__screen.fill((0, 128, 0))
+        self.__screen.blit(text_surface, pos)
+        pygame.draw.circle(self.__screen, color, (self.__screen.get_width() // 2, self.__screen.get_height() // 2 + 60), 20)
+
+    def __get_winner_text(self, winner):
+        if winner == Color.BLACK:
+            return self.__get_player_name(self._player_black)
+        elif winner == Color.WHITE:
+            return self.__get_player_name(self._player_white)
+        else:
+            return 'draw'
+
+    def __get_winner_color(self, winner):
+        winner = self._game_state.get_winner()
+        if winner == Color.BLACK:
+            return tuple([0, 0, 0])
+        elif winner == Color.WHITE:
+            return tuple([255, 255, 255])
+        else:
+            return tuple([128, 128, 128])
 
     def __draw_board(self):
         self.__screen.fill((0, 128, 0))
@@ -178,20 +230,29 @@ class GuiGameplay(Gameplay):
         name = self.__get_player_name(self._current_player)
 
         pygame.draw.circle(self.__screen, color, (20, self.__screen.get_height()-21), 11)
-        turn_text = self.__font.render(name, True, (0, 0, 0))
+        turn_text = self.__turn_font.render(name, True, (0, 0, 0))
         self.__screen.blit(turn_text, (40, self.__screen.get_height()-30))
 
     def __update(self):
+        if self._game_state.is_finished():
+            return
+
         if self.__pending_move is None:
             action = self.__get_move_from_player(self._current_player)
             if action is not None:
                 self.__pending_move = action
                 self.__pending_move_time = time.time()
                 self.__last_move = action
+
         elif time.time() - self.__pending_move_time > self._delay:
             self._game_state.make_move(self.__pending_move)
             self.__pending_move = None
             self.__pending_move_time = None
+
+        if self._game_state.is_finished():
+            if self.__finish_time is None:
+                self.__finish_time = time.time()
+            return
 
     def __get_move_from_player(self, player):
         if player is None:
