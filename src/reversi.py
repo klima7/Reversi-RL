@@ -70,14 +70,19 @@ def save_agent_data(agent, size):
 
 def get_path_to_agent_data(size, agent_name):
     root_path = Path(__file__).parent.parent
-    filename = f'{size[0]}x{size[1]}_{agent_name}.pickle'
-    return root_path / 'res' / filename
+    size_directory = f'{size[0]}x{size[1]}'
+    filename = f'{agent_name}.pickle'
+    directory = root_path / 'res' / size_directory
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / filename
 
 
 def get_path_to_backend_data(size):
     root_path = Path(__file__).parent.parent
-    filename = f'{size[0]}x{size[1]}_data.pickle'
-    return root_path / 'res' / filename
+    size_directory = f'{size[0]}x{size[1]}'
+    directory = root_path / 'res' / size_directory
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / 'data.pickle'
 
 
 if __name__ == '__main__':
