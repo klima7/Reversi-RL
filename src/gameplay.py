@@ -91,6 +91,7 @@ class GuiGameplay(Gameplay):
 
         self.__running = True
         self.__screen = None
+        self.__font = None
         self.__pool = ThreadPool(1)
         self.__task = None
         self.__last_move = None
@@ -99,7 +100,6 @@ class GuiGameplay(Gameplay):
 
     def play(self):
         self.__init_gui_if_needed()
-        self.__update_window_title()
 
         while not self._game_state.is_finished() and self.__running:
             self.__collect_events()
@@ -114,12 +114,11 @@ class GuiGameplay(Gameplay):
     def __init_gui_if_needed(self):
         if not pygame.get_init():
             pygame.init()
-            self.__screen = pygame.display.set_mode([self._size[1] * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE])
-
-    def __update_window_title(self):
-        white_name = self.__get_player_name(self._player_white)
-        black_name = self.__get_player_name(self._player_black)
-        pygame.display.set_caption(f'Reversi {self._size[0]}x{self._size[1]} | White: {white_name} | Black: {black_name}')
+            pygame.display.set_caption(f'Reversi {self._size[0]}x{self._size[1]}')
+            screen_width = self._size[1] * self.FIELD_SIZE
+            screen_height = self._size[0] * self.FIELD_SIZE + 40
+            self.__screen = pygame.display.set_mode([screen_width, screen_height])
+            self.__font = pygame.font.Font(pygame.font.get_default_font(), 20)
 
     def __dispose_gui(self):
         pygame.quit()
@@ -142,6 +141,7 @@ class GuiGameplay(Gameplay):
         self.__draw_board()
         self.__draw_discs()
         self.__draw_last_move()
+        self.__draw_turn()
         pygame.display.flip()
 
     def __draw_board(self):
@@ -172,6 +172,14 @@ class GuiGameplay(Gameplay):
             x_pos, y_pos = x*self.FIELD_SIZE+self.FIELD_SIZE//2, y*self.FIELD_SIZE+self.FIELD_SIZE//2
             pygame.draw.line(self.__screen, (255, 0, 0), (x_pos, 0), (x_pos, self._size[0] * self.FIELD_SIZE), width=2)
             pygame.draw.line(self.__screen, (255, 0, 0), (0, y_pos), (self._size[1] * self.FIELD_SIZE, y_pos), width=2)
+
+    def __draw_turn(self):
+        color = (255, 255, 255) if self._game_state.turn == Color.WHITE else (0, 0, 0)
+        name = self.__get_player_name(self._current_player)
+
+        pygame.draw.circle(self.__screen, color, (20, self.__screen.get_height()-21), 11)
+        turn_text = self.__font.render(name, True, (0, 0, 0))
+        self.__screen.blit(turn_text, (40, self.__screen.get_height()-30))
 
     def __update(self):
         if self.__pending_move is None:
