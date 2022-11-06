@@ -3,6 +3,7 @@ from tqdm import tqdm
 
 from . import Agent, agent
 from environment import Environment
+from exceptions import DomainException
 
 
 @agent
@@ -25,7 +26,7 @@ class ValueIterAgent(Agent):
             print('learning policy...')
             self.__policy = ValueIterAgent.__learn_policy(env, self.__gamma, self.__theta)
         if self.__policy is None:
-            raise Exception('ValueIterAgent must learn policy first')
+            raise DomainException('ValueIterAgent must learn policy first')
 
     def get_action(self, state, env: Environment):
         return self.__policy[state]

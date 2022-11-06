@@ -10,6 +10,7 @@ from tqdm import tqdm
 from game_state import GameState
 from environment import Environment
 from board import Color
+from exceptions import DomainException
 
 
 class Gameplay(ABC):
@@ -66,6 +67,11 @@ class Gameplay(ABC):
 
 
 class NoGuiGameplay(Gameplay):
+
+    def set_players(self, player_black, player_white):
+        if None in [player_black, player_white]:
+            raise DomainException('Human players are not allowed in gameplays without GUI')
+        super().set_players(player_black, player_white)
 
     def play(self):
         while not self._game_state.is_finished():
