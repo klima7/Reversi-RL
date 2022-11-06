@@ -19,7 +19,8 @@ from backend import LiveBackend, PreparedBackend
 @click.option('-n', '--number', type=int, default=1, help='Number of game repeats')
 @click.option('--gui/--nogui', default=True, help='Whether graphical interface should be shown')
 @click.option('-d', '--delay', type=float, default=0.05, help='Minimum delay between player moves in ms')
-def reversi(p1, p2, l1, l2, size, number, gui, delay):
+@click.option('-b', '--backend', type=click.Choice(['live', 'prepared']), default='live', help='Backend')
+def reversi(p1, p2, l1, l2, size, number, gui, delay, backend):
     if not gui and (p1 == 'human' or p2 == 'human'):
         print('Error: Human players are not allowed without GUI')
         return
@@ -27,7 +28,8 @@ def reversi(p1, p2, l1, l2, size, number, gui, delay):
     player1 = construct_agent(p1, l1, size)
     player2 = construct_agent(p2, l2, size)
 
-    backend = LiveBackend(size)
+    backend = PreparedBackend(size) if backend == 'prepared' else LiveBackend(size)
+
     gameplay_class = GuiGameplay if gui else NoGuiGameplay
     gameplay = gameplay_class(size, delay, backend)
 

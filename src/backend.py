@@ -71,6 +71,7 @@ class PreparedBackend(Backend):
     def __init__(self, size):
         super().__init__(size)
         self.__transitions = self.__load_or_generate_transitions()
+        print(f'There is {len(self.__transitions)} different states')
 
     def get_all_possible_boards_numbers(self):
         return tuple(self.__transitions.keys())
