@@ -82,9 +82,15 @@ class NoGuiGameplay(Gameplay):
 
 
 class GuiGameplay(Gameplay):
-
     FIELD_SIZE = 100
     DISC_SIZE = 80
+
+    WHITE_COLOR = (255, 255, 255)
+    BLACK_COLOR = (0, 0, 0)
+    MIDDLE_COLOR = (127, 127, 127)
+    BOARD_COLOR = (0, 127, 0)
+    LINES_COLOR = (0, 150, 0)
+    TEXT_COLOR = (0, 0, 0)
 
     def __init__(self, size, delay, backend):
         super().__init__(size, delay, backend)
@@ -129,10 +135,12 @@ class GuiGameplay(Gameplay):
     def __init_gui_if_needed(self):
         if not pygame.get_init():
             pygame.init()
-            pygame.display.set_caption(f'Reversi {self._size[0]}x{self._size[1]}')
+
             screen_width = self._size[1] * self.FIELD_SIZE
             screen_height = self._size[0] * self.FIELD_SIZE + 40
             self.__screen = pygame.display.set_mode([screen_width, screen_height])
+            pygame.display.set_caption(f'Reversi {self._size[0]}x{self._size[1]}')
+
             self.__turn_font = pygame.font.Font(pygame.font.get_default_font(), 20)
             self.__winner_font = pygame.font.Font(pygame.font.get_default_font(), 40)
 
@@ -172,12 +180,16 @@ class GuiGameplay(Gameplay):
         text = self.__get_winner_text(winner)
         color = self.__get_winner_color(winner)
 
-        text_surface = self.__winner_font.render(text, True, (0, 0, 0))
-        pos = ((self.__screen.get_width() - text_surface.get_width()) // 2, (self.__screen.get_height() - text_surface.get_height()) // 2)
+        text_surface = self.__winner_font.render(text, True, self.TEXT_COLOR)
+        text_pos = (
+            (self.__screen.get_width() - text_surface.get_width()) // 2,
+            (self.__screen.get_height() - text_surface.get_height()) // 2
+        )
+        circle_pos = (self.__screen.get_width() // 2, self.__screen.get_height() // 2 + 60)
 
-        self.__screen.fill((0, 128, 0))
-        self.__screen.blit(text_surface, pos)
-        pygame.draw.circle(self.__screen, color, (self.__screen.get_width() // 2, self.__screen.get_height() // 2 + 60), 20)
+        self.__screen.fill(self.BOARD_COLOR)
+        self.__screen.blit(text_surface, text_pos)
+        pygame.draw.circle(self.__screen, color, circle_pos, 20)
 
     def __get_winner_text(self, winner):
         if winner == Color.BLACK:
@@ -188,21 +200,23 @@ class GuiGameplay(Gameplay):
             return 'draw'
 
     def __get_winner_color(self, winner):
-        winner = self._game_state.get_winner()
         if winner == Color.BLACK:
-            return tuple([0, 0, 0])
+            return self.BLACK_COLOR
         elif winner == Color.WHITE:
-            return tuple([255, 255, 255])
+            return self.WHITE_COLOR
         else:
-            return tuple([128, 128, 128])
+            return self.MIDDLE_COLOR
 
     def __draw_board(self):
-        self.__screen.fill((0, 128, 0))
-        pygame.draw.rect(self.__screen, (0, 150, 0), (0, 0, self._size[1] * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE), width=3)
+        self.__screen.fill(self.BOARD_COLOR)
+        pygame.draw.rect(self.__screen, self.LINES_COLOR,
+                         (0, 0, self._size[1] * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE), width=3)
         for y in range(1, self._size[0]):
-            pygame.draw.line(self.__screen, (0, 150, 0), (0, y * self.FIELD_SIZE), (self._size[1] * self.FIELD_SIZE, y * self.FIELD_SIZE), width=3)
+            pygame.draw.line(self.__screen, self.LINES_COLOR, (0, y * self.FIELD_SIZE),
+                             (self._size[1] * self.FIELD_SIZE, y * self.FIELD_SIZE), width=3)
         for x in range(1, self._size[1]):
-            pygame.draw.line(self.__screen, (0, 150, 0), (x * self.FIELD_SIZE, 0), (x * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE), width=3)
+            pygame.draw.line(self.__screen, self.LINES_COLOR, (x * self.FIELD_SIZE, 0),
+                             (x * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE), width=3)
 
     def __draw_discs(self):
         possible_moves = self._game_state.get_moves()
@@ -212,31 +226,34 @@ class GuiGameplay(Gameplay):
                 disc_color = self._game_state.board[y, x]
                 pos = (x * self.FIELD_SIZE + disc_center_offset, y * self.FIELD_SIZE + disc_center_offset)
                 if disc_color == Color.ANY and (y, x) in possible_moves:
-                    color = [255, 255, 255] if self._game_state.turn == Color.WHITE else [0, 0, 0]
+                    color = self.WHITE_COLOR if self._game_state.turn == Color.WHITE else self.BLACK_COLOR
                     pygame.draw.circle(self.__screen, color, pos, self.DISC_SIZE // 2, width=3)
                 elif disc_color != Color.ANY:
-                    color = [255, 255, 255] if disc_color == Color.WHITE else [0, 0, 0]
+                    color = self.WHITE_COLOR if disc_color == Color.WHITE else self.BLACK_COLOR
                     pygame.draw.circle(self.__screen, color, pos, self.DISC_SIZE // 2)
 
     def __draw_last_move(self):
         if self.__last_move is not None:
             y, x = self.__last_move
-            x_pos, y_pos = x*self.FIELD_SIZE+self.FIELD_SIZE//2, y*self.FIELD_SIZE+self.FIELD_SIZE//2
+            x_pos, y_pos = x * self.FIELD_SIZE + self.FIELD_SIZE // 2, y * self.FIELD_SIZE + self.FIELD_SIZE // 2
             pygame.draw.line(self.__screen, (255, 0, 0), (x_pos, 0), (x_pos, self._size[0] * self.FIELD_SIZE), width=2)
             pygame.draw.line(self.__screen, (255, 0, 0), (0, y_pos), (self._size[1] * self.FIELD_SIZE, y_pos), width=2)
 
     def __draw_turn(self):
-        color = (255, 255, 255) if self._game_state.turn == Color.WHITE else (0, 0, 0)
+        color = self.WHITE_COLOR if self._game_state.turn == Color.WHITE else self.BLACK_COLOR
         name = self.__get_player_name(self._current_player)
 
-        pygame.draw.circle(self.__screen, color, (20, self.__screen.get_height()-21), 11)
-        turn_text = self.__turn_font.render(name, True, (0, 0, 0))
-        self.__screen.blit(turn_text, (40, self.__screen.get_height()-30))
+        pygame.draw.circle(self.__screen, color, (20, self.__screen.get_height() - 21), 11)
+        turn_text = self.__turn_font.render(name, True, self.TEXT_COLOR)
+        self.__screen.blit(turn_text, (40, self.__screen.get_height() - 30))
 
     def __update(self):
-        if self._game_state.is_finished():
-            return
+        if not self._game_state.is_finished():
+            self.__execute_move()
+            if self._game_state.is_finished():
+                self.__finish_time = time.time()
 
+    def __execute_move(self):
         if self.__pending_move is None:
             action = self.__get_move_from_player(self._current_player)
             if action is not None:
@@ -249,11 +266,6 @@ class GuiGameplay(Gameplay):
             self.__pending_move = None
             self.__pending_move_time = None
 
-        if self._game_state.is_finished():
-            if self.__finish_time is None:
-                self.__finish_time = time.time()
-            return
-
     def __get_move_from_player(self, player):
         if player is None:
             return self.__get_move_from_real_player()
@@ -262,7 +274,8 @@ class GuiGameplay(Gameplay):
 
     def __get_move_from_artificial_player(self, player):
         if self.__task is None:
-            self.__task = self.__pool.apply_async(GuiGameplay.__thread_to_get_action, [player, self._current_state, self._env, self._delay])
+            self.__task = self.__pool.apply_async(GuiGameplay.__thread_to_get_action,
+                                                  [player, self._current_state, self._env, self._delay])
 
         if self.__task.ready():
             action = self.__task.get()
