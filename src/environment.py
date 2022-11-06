@@ -17,11 +17,11 @@ class Environment:
 
     def get_possible_actions(self, state):
         game_state = self.__cvt_state_to_game_state(state)
-        return tuple(self.cvt_move_to_action(move) for move in game_state.get_moves())
+        return game_state.get_moves()
 
     def get_next_states(self, state, action):
         game_state = self.__cvt_state_to_game_state(state)
-        game_state.make_move(self.cvt_action_to_move(action))
+        game_state.make_move(action)
 
         next_states = set()
         game_states = {game_state.copy()}
@@ -48,12 +48,6 @@ class Environment:
         elif winner == Side.ANY:
             return self.DRAW_REWARD
         return 0
-
-    def cvt_move_to_action(self, move):
-        return move[0] * self.__size[1] + move[1]
-
-    def cvt_action_to_move(self, action):
-        return divmod(action, self.__size[1])
 
     def cvt_board_to_state(self, board):
         return board.number

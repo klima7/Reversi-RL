@@ -76,8 +76,7 @@ class NoGuiGameplay(Gameplay):
     def play(self):
         while not self._game_state.is_finished():
             action = self._current_player.get_action(self._current_state, self._env)
-            move = self._env.cvt_action_to_move(action)
-            self._game_state.make_move(move)
+            self._game_state.make_move(action)
 
         return self._get_winner()
 
@@ -176,24 +175,23 @@ class GuiGameplay(Gameplay):
 
     def __update(self):
         if self.__pending_move is None:
-            action = self.__get_action_from_player(self._current_player)
+            action = self.__get_move_from_player(self._current_player)
             if action is not None:
-                move = self._env.cvt_action_to_move(action)
-                self.__pending_move = move
+                self.__pending_move = action
                 self.__pending_move_time = time.time()
-                self.__last_move = move
+                self.__last_move = action
         elif time.time() - self.__pending_move_time > self._delay:
             self._game_state.make_move(self.__pending_move)
             self.__pending_move = None
             self.__pending_move_time = None
 
-    def __get_action_from_player(self, player):
+    def __get_move_from_player(self, player):
         if player is None:
-            return self.__get_action_from_real_player()
+            return self.__get_move_from_real_player()
         else:
-            return self.__get_action_from_artificial_player(player)
+            return self.__get_move_from_artificial_player(player)
 
-    def __get_action_from_artificial_player(self, player):
+    def __get_move_from_artificial_player(self, player):
         if self.__task is None:
             self.__task = self.__pool.apply_async(GuiGameplay.__thread_to_get_action, [player, self._current_state, self._env, self._delay])
 
@@ -216,14 +214,14 @@ class GuiGameplay(Gameplay):
 
         return action
 
-    def __get_action_from_real_player(self):
+    def __get_move_from_real_player(self):
         possible_moves = self._game_state.get_moves()
         pressed = pygame.mouse.get_pressed()
         if pressed[0]:
             mouse_pos = pygame.mouse.get_pos()
             move_pos = (mouse_pos[1] // self.FIELD_SIZE, mouse_pos[0] // self.FIELD_SIZE)
             if move_pos in possible_moves:
-                return self._env.cvt_move_to_action(move_pos)
+                return move_pos
             return None
         return None
 
