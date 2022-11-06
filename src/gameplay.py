@@ -14,12 +14,13 @@ from board import Color
 
 class Gameplay(ABC):
 
-    def __init__(self, size, delay):
+    def __init__(self, size, delay, backend):
         self._size = size
         self._delay = delay
+        self._backend = backend
 
-        self._game_state = GameState.create_initial(size)
-        self._env = Environment(size)
+        self._game_state = GameState.create_initial(size, backend)
+        self._env = Environment(size, backend)
 
         self._player_black = None
         self._player_white = None

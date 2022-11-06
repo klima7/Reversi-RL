@@ -8,16 +8,12 @@ class Environment:
     LOST_REWARD = -1000
     DRAW_REWARD = 0
 
-    def __init__(self, size):
+    def __init__(self, size, backend):
         self.__size = size
-        self.__all_states = None
+        self.__backend = backend
 
     def get_all_states(self):
-        if self.__all_states is None:
-            print('Generating all possible states...')
-            self.__all_states = self.__get_all_possible_states()
-            print('Generating states finished...')
-        return self.__all_states
+        return self.__backend.get_all_possible_boards_numbers()
 
     def get_possible_actions(self, state):
         game_state = self.__cvt_state_to_game_state(state)
@@ -68,11 +64,11 @@ class Environment:
 
     def __cvt_state_to_game_state(self, state):
         board = self.cvt_state_to_board(state)
-        return GameState(board, Side.ME)
+        return GameState(board, Side.ME, self.__backend)
 
     def __get_all_possible_states(self):
         possible_boards = set()
-        game_states = {GameState.create_initial(self.__size)}
+        game_states = {GameState.create_initial(self.__size, self.__backend)}
 
         while game_states:
             game_state = game_states.pop()

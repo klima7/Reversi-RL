@@ -7,6 +7,7 @@ import numpy as np
 
 from agents import agents
 from gameplay import GuiGameplay, NoGuiGameplay, Tournament
+from backend import LiveBackend
 
 
 @click.command()
@@ -26,8 +27,9 @@ def reversi(p1, p2, l1, l2, size, number, gui, delay):
     player1 = construct_agent(p1, l1, size)
     player2 = construct_agent(p2, l2, size)
 
+    backend = LiveBackend(size)
     gameplay_class = GuiGameplay if gui else NoGuiGameplay
-    gameplay = gameplay_class(size, delay)
+    gameplay = gameplay_class(size, delay, backend)
 
     tournament = Tournament(gameplay, number, player1, player2)
     results = tournament.play()

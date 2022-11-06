@@ -31,6 +31,9 @@ class Board:
     def __eq__(self, other):
         return self.number == other.number
 
+    def __str__(self):
+        return str(self.__data)
+
     @staticmethod
     def create_initial(size):
         board = np.zeros(size, dtype=np.byte)
@@ -42,10 +45,11 @@ class Board:
     @staticmethod
     def create_from_number(number, size):
         values = []
+        shifted_number = number
         for _ in range(size[0] * size[1]):
-            value = number & 0b11
+            value = shifted_number & 0b11
             values.insert(0, value-1)
-            number >>= 2
+            shifted_number >>= 2
         return Board(np.array(values).astype(np.int_).reshape(size), number=number)
 
     @property
@@ -59,7 +63,7 @@ class Board:
         return self.__number
 
     def copy(self):
-        return Board(np.array(self.__data), number=self.number)
+        return Board(np.array(self.__data), number=self.__number)
 
     def to_relative(self, my_color):
         return self.copy() if my_color == Color.WHITE else -self.copy()
