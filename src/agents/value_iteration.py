@@ -21,9 +21,11 @@ class ValueIterAgent(Agent):
 
     def initialize(self, env):
         super().initialize(env)
-        if self.__policy is None:
+        if self._learn:
             print('learning policy...')
             self.__policy = ValueIterAgent.__learn_policy(env, self.__gamma, self.__theta)
+        if self.__policy is None:
+            raise Exception('ValueIterAgent must learn policy first')
 
     def get_action(self, state, env: Environment):
         return self.__policy[state]
