@@ -19,10 +19,11 @@ from exceptions import DomainException
 @click.option('-l2', is_flag=True, default=False, help='Enable learning for second player')
 @click.option('-s', '--size', nargs=2, type=int, default=(8, 8), help='Size of the map')
 @click.option('-n', '--number', type=int, default=1, help='Number of game repeats')
-@click.option('--gui/--nogui', default=True, help='Whether graphical interface should be shown')
 @click.option('-d', '--delay', type=float, default=0.05, help='Minimum delay between player moves in ms')
-@click.option('-b', '--backend', type=click.Choice(['live', 'prepared']), default='live', help='Backend')
-def reversi(p1, p2, l1, l2, size, number, gui, delay, backend):
+@click.option('-b', '--backend', type=click.Choice(['live', 'prepared']), default='live',
+              help='Way of working with game states')
+@click.option('--gui/--nogui', default=True, help='Whether graphical interface should be shown')
+def reversi(p1, p2, l1, l2, size, number, delay, backend, gui):
     player1 = construct_agent(p1, l1, size)
     player2 = construct_agent(p2, l2, size)
 
