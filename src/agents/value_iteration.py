@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 
 from . import Agent, agent
 from environment import Environment
@@ -38,13 +39,13 @@ class ValueIterAgent(Agent):
         values = dict()
         policy = dict()
 
-        for current_state in env.get_all_states():
+        for current_state in tqdm(env.get_all_states(), desc='Values initialization'):
             values[current_state] = 0
             policy[current_state] = 0
 
         while True:
             values_prev = dict(values)
-            for s in env.get_all_states():
+            for s in tqdm(env.get_all_states(), desc='Value iteration'):
                 actions_values = []
                 for a in env.get_possible_actions(s):
                     action_value = 0
@@ -73,7 +74,7 @@ class ValueIterAgent(Agent):
     def __create_policy(env, value_function, gamma):
         policy = {}
 
-        for state in env.get_all_states():
+        for state in tqdm(env.get_all_states(), desc='Creating policy'):
             actions = env.get_possible_actions(state)
 
             if len(actions) == 0:

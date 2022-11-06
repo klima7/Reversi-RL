@@ -7,7 +7,7 @@ import numpy as np
 
 from agents import agents
 from gameplay import GuiGameplay, NoGuiGameplay, Tournament
-from backend import LiveBackend
+from backend import LiveBackend, PreparedBackend
 
 
 @click.command()

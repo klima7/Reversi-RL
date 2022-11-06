@@ -93,8 +93,10 @@ class PreparedBackend(Backend):
 
     def __load_or_generate_transitions(self):
         if self.__transitions_file_exists():
+            print('Loading prepared transitions...')
             return self.__load_transitions()
         else:
+            print('Preparing transitions transitions...')
             transitions = self.__generate_transitions()
             self.__save_transitions(transitions)
             return transitions
