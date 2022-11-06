@@ -6,7 +6,7 @@ class GameState:
     def __init__(self, board, turn, backend):
         self.board = board
         self.turn = turn
-        self.backend = backend
+        self.__backend = backend
 
     def __hash__(self):
         turn_bit = 1 if self.turn == Color.BLACK else 0
@@ -33,17 +33,17 @@ class GameState:
         return self.board.to_relative(-self.turn)
 
     def copy(self):
-        return GameState(self.board.copy(), self.turn, self.backend)
+        return GameState(self.board.copy(), self.turn, self.__backend)
 
     def get_moves(self):
-        return self.backend.get_moves(self.board, self.turn)
+        return self.__backend.get_moves(self.board, self.turn)
 
     def make_move(self, move):
-        self.board, self.turn = self.backend.make_move(self.board, self.turn, move)
+        self.board, self.turn = self.__backend.make_move(self.board, self.turn, move)
         return self
 
     def get_winner(self):
-        return self.backend.get_winner(self.board)
+        return self.__backend.get_winner(self.board)
 
     def is_finished(self):
         return self.get_winner() is not None

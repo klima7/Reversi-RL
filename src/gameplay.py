@@ -90,19 +90,19 @@ class GuiGameplay(Gameplay):
     def __init__(self, size, delay, backend):
         super().__init__(size, delay, backend)
 
-        self.running = True
-        self.screen = None
-        self.pool = ThreadPool(1)
-        self.task = None
-        self.last_move = None
-        self.pending_move = None
-        self.pending_move_time = None
+        self.__running = True
+        self.__screen = None
+        self.__pool = ThreadPool(1)
+        self.__task = None
+        self.__last_move = None
+        self.__pending_move = None
+        self.__pending_move_time = None
 
     def play(self):
         self.__init_gui_if_needed()
         self.__update_window_title()
 
-        while not self._game_state.is_finished() and self.running:
+        while not self._game_state.is_finished() and self.__running:
             self.__collect_events()
             self.__update()
             self.__draw_screen()
@@ -115,7 +115,7 @@ class GuiGameplay(Gameplay):
     def __init_gui_if_needed(self):
         if not pygame.get_init():
             pygame.init()
-            self.screen = pygame.display.set_mode([self._size[1] * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE])
+            self.__screen = pygame.display.set_mode([self._size[1] * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE])
 
     def __update_window_title(self):
         white_name = self.__get_player_name(self._player_white)
@@ -124,7 +124,7 @@ class GuiGameplay(Gameplay):
 
     def __dispose_gui(self):
         pygame.quit()
-        self.screen = None
+        self.__screen = None
 
     @staticmethod
     def __get_player_name(player):
@@ -136,7 +136,7 @@ class GuiGameplay(Gameplay):
     def __collect_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.running = False
+                self.__running = False
                 signal.raise_signal(signal.SIGINT)
 
     def __draw_screen(self):
@@ -146,12 +146,12 @@ class GuiGameplay(Gameplay):
         pygame.display.flip()
 
     def __draw_board(self):
-        self.screen.fill((0, 128, 0))
-        pygame.draw.rect(self.screen, (0, 150, 0), (0, 0, self._size[1] * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE), width=3)
+        self.__screen.fill((0, 128, 0))
+        pygame.draw.rect(self.__screen, (0, 150, 0), (0, 0, self._size[1] * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE), width=3)
         for y in range(1, self._size[0]):
-            pygame.draw.line(self.screen, (0, 150, 0), (0, y*self.FIELD_SIZE), (self._size[1] * self.FIELD_SIZE, y * self.FIELD_SIZE), width=3)
+            pygame.draw.line(self.__screen, (0, 150, 0), (0, y * self.FIELD_SIZE), (self._size[1] * self.FIELD_SIZE, y * self.FIELD_SIZE), width=3)
         for x in range(1, self._size[1]):
-            pygame.draw.line(self.screen, (0, 150, 0), (x*self.FIELD_SIZE, 0), (x * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE), width=3)
+            pygame.draw.line(self.__screen, (0, 150, 0), (x * self.FIELD_SIZE, 0), (x * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE), width=3)
 
     def __draw_discs(self):
         possible_moves = self._game_state.get_moves()
@@ -162,30 +162,30 @@ class GuiGameplay(Gameplay):
                 pos = (x * self.FIELD_SIZE + disc_center_offset, y * self.FIELD_SIZE + disc_center_offset)
                 if disc_color == Color.ANY and (y, x) in possible_moves:
                     color = [255, 255, 255] if self._game_state.turn == Color.WHITE else [0, 0, 0]
-                    pygame.draw.circle(self.screen, color, pos, self.DISC_SIZE // 2, width=3)
+                    pygame.draw.circle(self.__screen, color, pos, self.DISC_SIZE // 2, width=3)
                 elif disc_color != Color.ANY:
                     color = [255, 255, 255] if disc_color == Color.WHITE else [0, 0, 0]
-                    pygame.draw.circle(self.screen, color, pos, self.DISC_SIZE // 2)
+                    pygame.draw.circle(self.__screen, color, pos, self.DISC_SIZE // 2)
 
     def __draw_last_move(self):
-        if self.last_move is not None:
-            y, x = self.last_move
+        if self.__last_move is not None:
+            y, x = self.__last_move
             x_pos, y_pos = x*self.FIELD_SIZE+self.FIELD_SIZE//2, y*self.FIELD_SIZE+self.FIELD_SIZE//2
-            pygame.draw.line(self.screen, (255, 0, 0), (x_pos, 0), (x_pos, self._size[0] * self.FIELD_SIZE), width=2)
-            pygame.draw.line(self.screen, (255, 0, 0), (0, y_pos), (self._size[1] * self.FIELD_SIZE, y_pos), width=2)
+            pygame.draw.line(self.__screen, (255, 0, 0), (x_pos, 0), (x_pos, self._size[0] * self.FIELD_SIZE), width=2)
+            pygame.draw.line(self.__screen, (255, 0, 0), (0, y_pos), (self._size[1] * self.FIELD_SIZE, y_pos), width=2)
 
     def __update(self):
-        if self.pending_move is None:
+        if self.__pending_move is None:
             action = self.__get_action_from_player(self._current_player)
             if action is not None:
                 move = self._env.cvt_action_to_move(action)
-                self.pending_move = move
-                self.pending_move_time = time.time()
-                self.last_move = move
-        elif time.time() - self.pending_move_time > self._delay:
-            self._game_state.make_move(self.pending_move)
-            self.pending_move = None
-            self.pending_move_time = None
+                self.__pending_move = move
+                self.__pending_move_time = time.time()
+                self.__last_move = move
+        elif time.time() - self.__pending_move_time > self._delay:
+            self._game_state.make_move(self.__pending_move)
+            self.__pending_move = None
+            self.__pending_move_time = None
 
     def __get_action_from_player(self, player):
         if player is None:
@@ -194,12 +194,12 @@ class GuiGameplay(Gameplay):
             return self.__get_action_from_artificial_player(player)
 
     def __get_action_from_artificial_player(self, player):
-        if self.task is None:
-            self.task = self.pool.apply_async(GuiGameplay.__thread_to_get_action, [player, self._current_state, self._env, self._delay])
+        if self.__task is None:
+            self.__task = self.__pool.apply_async(GuiGameplay.__thread_to_get_action, [player, self._current_state, self._env, self._delay])
 
-        if self.task.ready():
-            action = self.task.get()
-            self.task = None
+        if self.__task.ready():
+            action = self.__task.get()
+            self.__task = None
             return action
 
         return None
