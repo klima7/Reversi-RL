@@ -95,6 +95,8 @@ class GuiGameplay(Gameplay):
         self.pool = ThreadPool(1)
         self.task = None
         self.last_move = None
+        self.pending_move = None
+        self.pending_move_time = None
 
     def play(self):
         self.__init_gui_if_needed()
@@ -173,11 +175,17 @@ class GuiGameplay(Gameplay):
             pygame.draw.line(self.screen, (255, 0, 0), (0, y_pos), (self._size[1] * self.FIELD_SIZE, y_pos), width=2)
 
     def __update(self):
-        action = self.__get_action_from_player(self._current_player)
-        if action is not None:
-            move = self._env.cvt_action_to_move(action)
-            self._game_state.make_move(move)
-            self.last_move = move
+        if self.pending_move is None:
+            action = self.__get_action_from_player(self._current_player)
+            if action is not None:
+                move = self._env.cvt_action_to_move(action)
+                self.pending_move = move
+                self.pending_move_time = time.time()
+                self.last_move = move
+        elif time.time() - self.pending_move_time > self._delay:
+            self._game_state.make_move(self.pending_move)
+            self.pending_move = None
+            self.pending_move_time = None
 
     def __get_action_from_player(self, player):
         if player is None:
