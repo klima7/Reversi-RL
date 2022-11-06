@@ -15,9 +15,8 @@ class Side:
 
 class Board:
 
-    def __init__(self, board, number=None):
+    def __init__(self, board):
         self.__data = board
-        self.__number = number
 
     def __getitem__(self, item):
         return self.__data[item[0], item[1]]
@@ -50,20 +49,23 @@ class Board:
             value = shifted_number & 0b11
             values.insert(0, value-1)
             shifted_number >>= 2
-        return Board(np.array(values).astype(np.int_).reshape(size), number=number)
+        return Board(np.array(values).astype(np.int_).reshape(size))
+
+    @property
+    def number(self):
+        number = 0
+        tmp = self.__data.flatten() + 1
+        for elem in tmp:
+            number <<= 2
+            number |= int(elem)
+        return number
 
     @property
     def size(self):
         return self.__data.shape
 
-    @property
-    def number(self):
-        if self.__number is None:
-            self.__number = self.__get_number()
-        return self.__number
-
     def copy(self):
-        return Board(np.array(self.__data), number=self.__number)
+        return Board(np.array(self.__data))
 
     def to_relative(self, my_color):
         return self.copy() if my_color == Color.WHITE else -self.copy()
@@ -85,7 +87,6 @@ class Board:
         self.__data[position[0], position[1]] = color
         reverse_positions = self.__get_positions_to_reverse(position, color)
         self.__data[reverse_positions[:, 0], reverse_positions[:, 1]] = color
-        self.__number = None
         return self
 
     def is_finished(self):
@@ -134,11 +135,3 @@ class Board:
 
     def __move_reverses_some_discs(self, position, color):
         return len(self.__get_positions_to_reverse(position, color)) > 0
-
-    def __get_number(self):
-        number = 0
-        tmp = self.__data.flatten() + 1
-        for elem in tmp:
-            number <<= 2
-            number |= int(elem)
-        return number

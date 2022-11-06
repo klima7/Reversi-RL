@@ -3,17 +3,17 @@ from board import Board, Color
 
 class GameState:
 
-    def __init__(self, board, turn, backend, number=None):
+    def __init__(self, board, turn, backend):
         self.board = board
         self.turn = turn
         self.backend = backend
-        self.__number = number
 
     def __hash__(self):
-        return self.number
+        turn_bit = 1 if self.turn == Color.BLACK else 0
+        return self.board.number << 1 | turn_bit
 
     def __eq__(self, other):
-        return self.number == other.number
+        return self.board.number == other.board.number and self.turn == other.turn
 
     @staticmethod
     def create_initial(size, backend):
@@ -32,26 +32,18 @@ class GameState:
     def opposite_board_view(self):
         return self.board.to_relative(-self.turn)
 
-    @property
-    def number(self):
-        if self.__number is None:
-            self.__number = self.__get_number()
-        return self.__number
-
     def copy(self):
-        return GameState(self.board.copy(), self.turn, self.backend, self.__number)
+        return GameState(self.board.copy(), self.turn, self.backend)
 
     def reset(self):
         self.board = Board.create_initial(self.size)
         self.turn = Color.BLACK
-        self.__number = None
 
     def get_moves(self):
         return self.backend.get_moves(self.board, self.turn)
 
     def make_move(self, move):
         self.board, self.turn = self.backend.make_move(self.board, self.turn, move)
-        self.__number = None
         return self
 
     def is_finished(self):
@@ -59,7 +51,3 @@ class GameState:
 
     def get_winner(self):
         return self.board.get_winner()
-
-    def __get_number(self):
-        turn_bit = 1 if self.turn == Color.BLACK else 0
-        return self.board.number << 1 | turn_bit
