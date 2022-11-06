@@ -1,4 +1,3 @@
-from pathlib import Path
 from abc import ABC, abstractmethod
 import pickle
 
@@ -77,8 +76,9 @@ class LiveBackend(Backend):
 
 class PreparedBackend(Backend):
 
-    def __init__(self, size):
+    def __init__(self, size, path):
         super().__init__(size)
+        self.__path = path
         self.__data = self.__load_or_prepare_data()
         print(f'Game has {len(self.__data)} possible states')
 
@@ -98,12 +98,9 @@ class PreparedBackend(Backend):
 
     def get_winner(self, board):
         number = board.number
-        return number in self.__data and self.__data[board.number][1]
-
-    def __get_file_location(self):
-        root_path = Path(__file__).parent.parent
-        filename = f'{self._size[0]}x{self._size[1]}_transitions.pickle'
-        return root_path / 'res' / filename
+        if number not in self.__data:
+            return None
+        return self.__data[board.number][1]
 
     def __load_or_prepare_data(self):
         if self.__data_file_exists():
@@ -116,14 +113,14 @@ class PreparedBackend(Backend):
             return data
 
     def __data_file_exists(self):
-        return self.__get_file_location().exists()
+        return self.__path.exists()
 
     def __load_data(self):
-        with open(self.__get_file_location(), 'rb') as f:
+        with open(self.__path, 'rb') as f:
             return pickle.load(f)
 
     def __save_data(self, transitions):
-        with open(self.__get_file_location(), 'wb') as f:
+        with open(self.__path, 'wb') as f:
             pickle.dump(transitions, f)
 
     def __prepare_data(self):

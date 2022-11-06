@@ -27,7 +27,7 @@ def reversi(p1, p2, l1, l2, size, number, delay, backend, gui):
     player1 = construct_agent(p1, l1, size)
     player2 = construct_agent(p2, l2, size)
 
-    backend = PreparedBackend(size) if backend == 'prepared' else LiveBackend(size)
+    backend = LiveBackend(size) if backend == 'live' else PreparedBackend(size, get_path_to_backend_data(size))
 
     gameplay_class = GuiGameplay if gui else NoGuiGameplay
     gameplay = gameplay_class(size, delay, backend)
@@ -71,6 +71,12 @@ def save_agent_data(agent, size):
 def get_path_to_agent_data(size, agent_name):
     root_path = Path(__file__).parent.parent
     filename = f'{size[0]}x{size[1]}_{agent_name}.pickle'
+    return root_path / 'res' / filename
+
+
+def get_path_to_backend_data(size):
+    root_path = Path(__file__).parent.parent
+    filename = f'{size[0]}x{size[1]}_data.pickle'
     return root_path / 'res' / filename
 
 
