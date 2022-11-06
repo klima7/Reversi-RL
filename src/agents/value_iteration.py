@@ -11,8 +11,9 @@ class ValueIterAgent(Agent):
     DEFAULT_GAMMA = 0.95
     DEFAULT_THETA = 1e-4
 
-    def __init__(self, size, gamma=DEFAULT_GAMMA, theta=DEFAULT_THETA):
-        super().__init__(size)
+    def __init__(self, gamma=DEFAULT_GAMMA, theta=DEFAULT_THETA):
+        super().__init__()
+
         self.__gamma = gamma
         self.__theta = theta
         self.__policy = None
@@ -20,6 +21,7 @@ class ValueIterAgent(Agent):
     def initialize(self, env):
         super().initialize(env)
         if self.__policy is None:
+            print('learning policy...')
             self.__policy = ValueIterAgent.__learn_policy(env, self.__gamma, self.__theta)
 
     def get_action(self, state, env: Environment):

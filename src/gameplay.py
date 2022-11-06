@@ -29,10 +29,8 @@ class Gameplay(ABC):
         self._player_white = player_white
 
         if self._player_white is not None:
-            self._player_white.load_data()
             self._player_white.initialize(self._env)
         if self._player_black is not None:
-            self._player_white.load_data()
             self._player_black.initialize(self._env)
 
     def swap_players(self):
@@ -248,17 +246,12 @@ class Tournament:
         iterator = range(self.number) if self.number is not None else count()
         tqdm_iterator = tqdm(iterator, total=self.number, desc='Playing', unit=' play')
 
-        for play_number in tqdm_iterator:
+        for _ in tqdm_iterator:
             self.__play_once()
             tqdm_iterator.set_postfix_str(f'Wins: {self.results[0]}/{self.results[1]}/{self.results[2]}')
 
-            if play_number % 100 == 0:
-                self.__save_agents_data()
-
             if self.interrupted:
                 break
-
-        self.__save_agents_data()
 
     def __play_once(self):
         winner = self.gameplay.play()
@@ -272,9 +265,3 @@ class Tournament:
 
         self.gameplay.reset()
         self.gameplay.swap_players()
-
-    def __save_agents_data(self):
-        if self.player1 is not None:
-            self.player1.save_data()
-        if self.player2 is not None:
-            self.player2.save_data()

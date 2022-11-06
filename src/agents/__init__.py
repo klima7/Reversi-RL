@@ -2,7 +2,7 @@ from .base import Agent
 
 
 agents = {
-    'human': lambda size, learn: None
+    'human': None
 }
 
 

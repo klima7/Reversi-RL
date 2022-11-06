@@ -1,3 +1,4 @@
+from pathlib import Path
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'hide'
 
@@ -22,11 +23,8 @@ def reversi(p1, p2, l1, l2, size, number, gui, delay):
         print('Error: Human players are not allowed without GUI')
         return
 
-    player1 = agents[p1](size)
-    player2 = agents[p2](size)
-
-    player1.set_learn(l1)
-    player2.set_learn(l2)
+    player1 = construct_agent(p1, l1, size)
+    player2 = construct_agent(p2, l2, size)
 
     gameplay_class = GuiGameplay if gui else NoGuiGameplay
     gameplay = gameplay_class(size, delay)
@@ -40,6 +38,37 @@ def reversi(p1, p2, l1, l2, size, number, gui, delay):
     print(f'  Player2 ({p2}) wins: {results[1]} ({percent_results[1]:.1f}%)')
     print(f'  Draws: {results[2]} ({percent_results[2]:.1f}%)')
     print('-------------------------------')
+
+    save_agent_data(player1, size)
+    save_agent_data(player2, size)
+
+
+def construct_agent(name, learn, size):
+    agent_class = agents[name]
+
+    if agent_class is None:     # real human - special case
+        return None
+
+    agent = agent_class()
+    agent.set_learn(learn)
+
+    path_to_agent_data = get_path_to_agent_data(size, agent.NAME)
+    agent.load_data(path_to_agent_data)
+
+    return agent
+
+
+def save_agent_data(agent, size):
+    if agent is None:   # human agent's don't have data
+        return
+    path_to_agent_data = get_path_to_agent_data(size, agent.NAME)
+    agent.save_data(path_to_agent_data)
+
+
+def get_path_to_agent_data(size, agent_name):
+    root_path = Path(__file__).parent.parent
+    filename = f'{size[0]}x{size[1]}_{agent_name}.pickle'
+    return root_path / 'res' / filename
 
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-from board import Board, Color, Side
+from board import Board, Color
 
 
 class GameState:
