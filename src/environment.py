@@ -65,26 +65,3 @@ class Environment:
     def __cvt_state_to_game_state(self, state):
         board = self.cvt_state_to_board(state)
         return GameState(board, Side.ME, self.__backend)
-
-    def __get_all_possible_states(self):
-        possible_boards = set()
-        game_states = {GameState.create_initial(self.__size, self.__backend)}
-
-        while game_states:
-            game_state = game_states.pop()
-
-            if game_state in game_states:
-                continue
-
-            if game_state.is_finished():
-                possible_boards.update([game_state.board_view, game_state.opposite_board_view])
-            else:
-                possible_boards.add(game_state.board_view)
-
-            for move in game_state.get_moves():
-                next_game_state = game_state.copy().make_move(move)
-                game_states.add(next_game_state)
-
-        possible_states = [self.cvt_board_to_state(board) for board in possible_boards]
-
-        return possible_states

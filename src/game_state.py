@@ -35,10 +35,6 @@ class GameState:
     def copy(self):
         return GameState(self.board.copy(), self.turn, self.backend)
 
-    def reset(self):
-        self.board = Board.create_initial(self.size)
-        self.turn = Color.BLACK
-
     def get_moves(self):
         return self.backend.get_moves(self.board, self.turn)
 
@@ -47,7 +43,7 @@ class GameState:
         return self
 
     def is_finished(self):
-        return self.board.is_finished()
+        return self.backend.is_board_finished(self.board)
 
     def get_winner(self):
-        return self.board.get_winner()
+        return self.backend.get_winner(self.board)

@@ -59,7 +59,7 @@ class Gameplay(ABC):
         pass
 
     def reset(self):
-        self._game_state.reset()
+        self._game_state = GameState.create_initial(self._size, self._backend)
 
     def dispose(self):
         pass
@@ -81,8 +81,8 @@ class GuiGameplay(Gameplay):
     FIELD_SIZE = 100
     DISC_SIZE = 80
 
-    def __init__(self, size, delay=0):
-        super().__init__(size, delay)
+    def __init__(self, size, delay, backend):
+        super().__init__(size, delay, backend)
 
         self.running = True
         self.screen = None
