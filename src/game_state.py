@@ -42,8 +42,8 @@ class GameState:
         self.board, self.turn = self.backend.make_move(self.board, self.turn, move)
         return self
 
-    def is_finished(self):
-        return self.backend.is_board_finished(self.board)
-
     def get_winner(self):
         return self.backend.get_winner(self.board)
+
+    def is_finished(self):
+        return self.get_winner() is not None

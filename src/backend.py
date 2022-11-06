@@ -24,10 +24,6 @@ class Backend(ABC):
         pass
 
     @abstractmethod
-    def is_board_finished(self, board):
-        pass
-
-    @abstractmethod
     def get_winner(self, board):
         pass
 
@@ -73,11 +69,10 @@ class LiveBackend(Backend):
         new_turn = -turn if board.has_any_moves(-turn) else turn
         return new_board, new_turn
 
-    def is_board_finished(self, board):
-        return board.is_finished()
-
     def get_winner(self, board):
-        return board.get_winner()
+        if board.is_finished():
+            return board.get_winner()
+        return None
 
 
 class PreparedBackend(Backend):
@@ -100,10 +95,6 @@ class PreparedBackend(Backend):
         next_board = Board.create_from_number(next_relative_board_number, self._size).to_absolute(turn)
         next_turn = -turn if is_turn_change else turn
         return next_board, next_turn
-
-    def is_board_finished(self, board):
-        number = board.number
-        return number in self.__data and self.__data[board.number][1] is not None
 
     def get_winner(self, board):
         number = board.number

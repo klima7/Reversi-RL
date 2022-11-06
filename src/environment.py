@@ -40,14 +40,13 @@ class Environment:
 
     def get_reward(self, state, action, next_state):
         game_state = self.__cvt_state_to_game_state(next_state)
-        if game_state.is_finished():
-            winner = game_state.get_winner()
-            if winner == Side.ME:
-                return self.WIN_REWARD
-            elif winner == Side.OPPONENT:
-                return self.LOST_REWARD
-            elif winner == Side.ANY:
-                return self.DRAW_REWARD
+        winner = game_state.get_winner()
+        if winner == Side.ME:
+            return self.WIN_REWARD
+        elif winner == Side.OPPONENT:
+            return self.LOST_REWARD
+        elif winner == Side.ANY:
+            return self.DRAW_REWARD
         return 0
 
     def cvt_move_to_action(self, move):
