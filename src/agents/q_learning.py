@@ -23,11 +23,11 @@ class QLearningAgent(ActiveAgent):
 
     @property
     def __alpha(self):
-        return self.__base_alpha if self._learn else 0
+        return self.__base_alpha if self.learn else 0
 
     @property
     def __epsilon(self):
-        return self.__base_epsilon if self._learn else 0
+        return self.__base_epsilon if self.learn else 0
 
     def __get_qvalue(self, state, action):
         return self.__qvalues[state][action]

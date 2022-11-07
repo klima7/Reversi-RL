@@ -21,7 +21,7 @@ class ValueIterAgent(PassiveAgent):
 
     def initialize(self):
         super().initialize()
-        if self._learn:
+        if self.learn:
             print('learning policy...')
             self.__policy = self.__learn_policy(self.__gamma, self.__theta)
         if self.__policy is None:

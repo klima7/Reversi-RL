@@ -8,7 +8,7 @@ class Agent(ABC):
     NAME = None
 
     def __init__(self):
-        self._learn = True
+        self.learn = True
 
     def get_data_to_save(self):
         return None
@@ -29,9 +29,6 @@ class Agent(ABC):
             return
         with open(path, 'wb') as f:
             return pickle.dump(data_to_save, f)
-
-    def set_learn(self, learn):
-        self._learn = learn
 
 
 class PassiveAgent(Agent):

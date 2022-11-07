@@ -53,7 +53,7 @@ def construct_agent(name, learn, size):
         return None
 
     agent = agent_class()
-    agent.set_learn(learn)
+    agent.learn = learn
 
     path_to_agent_data = get_path_to_agent_data(size, agent.NAME)
     agent.load_data(path_to_agent_data)
@@ -62,7 +62,7 @@ def construct_agent(name, learn, size):
 
 
 def save_agent_data(agent, size):
-    if agent is None:   # human agent's don't have data
+    if agent is None or agent.learn is False:
         return
     path_to_agent_data = get_path_to_agent_data(size, agent.NAME)
     agent.save_data(path_to_agent_data)
