@@ -1,4 +1,4 @@
-from .base import Agent
+from .base import Agent, PassiveAgent, ActiveAgent
 
 
 agents = {
@@ -17,3 +17,4 @@ def agent(cls):
 
 from .random import RandomAgent
 from .value_iteration import ValueIterAgent
+from .q_learning import QLearningAgent

@@ -49,6 +49,8 @@ class Environment:
             return self.DRAW_REWARD
         return 0
 
+    # auxiliary methods
+
     def cvt_board_to_state(self, board):
         return board.number
 

@@ -1,13 +1,12 @@
 import numpy as np
 from tqdm import tqdm
 
-from . import Agent, agent
-from environment import Environment
+from . import PassiveAgent, agent
 from exceptions import DomainException
 
 
 @agent
-class ValueIterAgent(Agent):
+class ValueIterAgent(PassiveAgent):
 
     NAME = 'value_iter'
     DEFAULT_GAMMA = 0.95
@@ -20,15 +19,15 @@ class ValueIterAgent(Agent):
         self.__theta = theta
         self.__policy = None
 
-    def initialize(self, env):
-        super().initialize(env)
+    def initialize(self):
+        super().initialize()
         if self._learn:
             print('learning policy...')
-            self.__policy = ValueIterAgent.__learn_policy(env, self.__gamma, self.__theta)
+            self.__policy = self.__learn_policy(self.__gamma, self.__theta)
         if self.__policy is None:
             raise DomainException('ValueIterAgent must learn policy first')
 
-    def get_action(self, state, env: Environment):
+    def get_action(self, state):
         return self.__policy[state]
 
     def get_data_to_save(self):
@@ -37,23 +36,22 @@ class ValueIterAgent(Agent):
     def set_saved_data(self, data):
         self.__policy = data
 
-    @staticmethod
-    def __learn_policy(env, gamma, theta):
+    def __learn_policy(self, gamma, theta):
         values = dict()
         policy = dict()
 
-        for current_state in tqdm(env.get_all_states(), desc='Values initialization'):
+        for current_state in tqdm(self.env.get_all_states(), desc='Values initialization'):
             values[current_state] = 0
             policy[current_state] = 0
 
         while True:
             values_prev = dict(values)
-            for s in tqdm(env.get_all_states(), desc='Value iteration'):
+            for s in tqdm(self.env.get_all_states(), desc='Value iteration'):
                 actions_values = []
-                for a in env.get_possible_actions(s):
+                for a in self.env.get_possible_actions(s):
                     action_value = 0
-                    for s_prim, p in env.get_next_states(s, a).items():
-                        r = env.get_reward(s, a, s_prim)
+                    for s_prim, p in self.env.get_next_states(s, a).items():
+                        r = self.env.get_reward(s, a, s_prim)
                         action_value += p * (r + gamma * values[s_prim])
                     actions_values.append(action_value)
 
@@ -63,7 +61,7 @@ class ValueIterAgent(Agent):
             if ValueIterAgent.__should_stop_learning(values, values_prev, theta):
                 break
 
-        return ValueIterAgent.__create_policy(env, values, gamma)
+        return self.__create_policy(values, gamma)
 
     @staticmethod
     def __should_stop_learning(values1, values2, theta):
@@ -73,12 +71,11 @@ class ValueIterAgent(Agent):
         min_diff = np.max(diff)
         return min_diff < theta
 
-    @staticmethod
-    def __create_policy(env, value_function, gamma):
+    def __create_policy(self, value_function, gamma):
         policy = {}
 
-        for state in tqdm(env.get_all_states(), desc='Creating policy'):
-            actions = env.get_possible_actions(state)
+        for state in tqdm(self.env.get_all_states(), desc='Creating policy'):
+            actions = self.env.get_possible_actions(state)
 
             if len(actions) == 0:
                 continue
@@ -87,8 +84,8 @@ class ValueIterAgent(Agent):
 
             for action in actions:
                 action_value = 0
-                for new_state, probability in env.get_next_states(state, action).items():
-                    reward = env.get_reward(state, action, new_state)
+                for new_state, probability in self.env.get_next_states(state, action).items():
+                    reward = self.env.get_reward(state, action, new_state)
                     action_value += probability * (reward + gamma * value_function[new_state])
                 actions_values.append(action_value)
 

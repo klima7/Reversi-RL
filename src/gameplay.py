@@ -11,6 +11,7 @@ from game_state import GameState
 from environment import Environment
 from board import Color
 from exceptions import DomainException
+from agents import PassiveAgent, ActiveAgent
 
 
 class Gameplay(ABC):
@@ -30,10 +31,8 @@ class Gameplay(ABC):
         self._player_black = player_black
         self._player_white = player_white
 
-        if self._player_white is not None:
-            self._player_white.initialize(self._env)
-        if self._player_black is not None:
-            self._player_black.initialize(self._env)
+        self.__config_player(player_black)
+        self.__config_player(player_white)
 
     def swap_players(self):
         self._player_black, self._player_white = self._player_white, self._player_black
@@ -41,6 +40,10 @@ class Gameplay(ABC):
     @property
     def _current_player(self):
         return self._player_white if self._game_state.turn == Color.WHITE else self._player_black
+
+    @property
+    def _opposite_player(self):
+        return self._player_black if self._game_state.turn == Color.WHITE else self._player_white
 
     @property
     def _current_state(self):
@@ -55,6 +58,17 @@ class Gameplay(ABC):
         else:
             return None
 
+    def __config_player(self, player):
+        if player is None:
+            return
+        elif isinstance(player, PassiveAgent):
+            player.env = self._env
+            player.initialize()
+        elif isinstance(player, ActiveAgent):
+            player.get_possible_actions = self._env.get_possible_actions
+        else:
+            raise DomainException('Player must be None or subclass of Passive/Active Agent')
+
     @abstractmethod
     def play(self):
         pass
@@ -64,6 +78,24 @@ class Gameplay(ABC):
 
     def dispose(self):
         pass
+
+    def _make_move(self, action):
+        player = self._current_player
+        if isinstance(player, ActiveAgent):
+            player._last_state = self._current_state
+            player._last_action = action
+
+        self._game_state.make_move(action)
+
+    def _update_player(self, player):
+        state = self._get_state_for_player(player)
+        if isinstance(player, ActiveAgent) and player._last_action is not None:
+            reward = self._env.get_reward(player._last_state, player._last_action, state)
+            player.update(player._last_state, player._last_action, reward, state)
+
+    def _get_state_for_player(self, player):
+        color = Color.BLACK if player == self._player_black else Color.WHITE
+        return self._env.cvt_board_to_state(self._game_state.board.to_relative(color))
 
 
 class NoGuiGameplay(Gameplay):
@@ -75,8 +107,10 @@ class NoGuiGameplay(Gameplay):
 
     def play(self):
         while not self._game_state.is_finished():
-            action = self._current_player.get_action(self._current_state, self._env)
-            self._game_state.make_move(action)
+            action = self._current_player.get_action(self._current_state)
+            self._make_move(action)
+            self._update_player(self._current_player)
+        self._update_player(self._opposite_player)
 
         return self._get_winner()
 
@@ -249,22 +283,28 @@ class GuiGameplay(Gameplay):
 
     def __update(self):
         if not self._game_state.is_finished():
-            self.__execute_move()
+            self.__update_move()
             if self._game_state.is_finished():
                 self.__finish_time = time.time()
 
-    def __execute_move(self):
+    def __update_move(self):
         if self.__pending_move is None:
-            action = self.__get_move_from_player(self._current_player)
-            if action is not None:
-                self.__pending_move = action
-                self.__pending_move_time = time.time()
-                self.__last_move = action
-
+            self.__update_pending_move()
         elif time.time() - self.__pending_move_time > self._delay:
-            self._game_state.make_move(self.__pending_move)
-            self.__pending_move = None
-            self.__pending_move_time = None
+            self.__execute_pending_move()
+
+    def __update_pending_move(self):
+        action = self.__get_move_from_player(self._current_player)
+        if action is not None:
+            self.__pending_move = action
+            self.__pending_move_time = time.time()
+            self.__last_move = action
+
+    def __execute_pending_move(self):
+        self._make_move(self.__pending_move)
+        self._update_player(self._current_player)
+        self.__pending_move = None
+        self.__pending_move_time = None
 
     def __get_move_from_player(self, player):
         if player is None:
@@ -275,7 +315,7 @@ class GuiGameplay(Gameplay):
     def __get_move_from_artificial_player(self, player):
         if self.__task is None:
             self.__task = self.__pool.apply_async(GuiGameplay.__thread_to_get_action,
-                                                  [player, self._current_state, self._env, self._delay])
+                                                  [player, self._current_state, self._delay])
 
         if self.__task.ready():
             action = self.__task.get()
@@ -285,9 +325,9 @@ class GuiGameplay(Gameplay):
         return None
 
     @staticmethod
-    def __thread_to_get_action(player, state, env, delay):
+    def __thread_to_get_action(player, state, delay):
         start_time = time.time()
-        action = player.get_action(state, env)
+        action = player.get_action(state)
         duration = time.time() - start_time
 
         sleep_time = delay - duration

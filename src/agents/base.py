@@ -10,13 +10,6 @@ class Agent(ABC):
     def __init__(self):
         self._learn = True
 
-    def initialize(self, env):
-        pass
-
-    @abstractmethod
-    def get_action(self, state, env):
-        pass
-
     def get_data_to_save(self):
         return None
 
@@ -39,3 +32,37 @@ class Agent(ABC):
 
     def set_learn(self, learn):
         self._learn = learn
+
+
+class PassiveAgent(Agent):
+
+    def __init__(self):
+        super().__init__()
+        self.env = None
+
+    def initialize(self):
+        pass
+
+    @abstractmethod
+    def get_action(self, state):
+        pass
+
+
+class ActiveAgent(Agent):
+
+    def __init__(self):
+        super().__init__()
+        self.get_possible_actions = None
+
+        self._last_action = None
+        self._last_state = None
+
+    @abstractmethod
+    def get_action(self, state):
+        pass
+
+    def update(self, state, action, reward, next_state):
+        pass
+
+    def reset(self):
+        pass

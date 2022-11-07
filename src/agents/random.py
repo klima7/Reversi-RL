@@ -1,14 +1,13 @@
 import random
 
-from . import Agent, agent
-from environment import Environment
+from . import PassiveAgent, agent
 
 
 @agent
-class RandomAgent(Agent):
+class RandomAgent(PassiveAgent):
 
     NAME = 'random'
 
-    def get_action(self, state, env: Environment):
-        actions = env.get_possible_actions(state)
+    def get_action(self, state):
+        actions = self.env.get_possible_actions(state)
         return random.choice(actions)
