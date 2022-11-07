@@ -12,7 +12,8 @@ from backend import LiveBackend, PreparedBackend
 from exceptions import DomainException
 
 
-@click.command()
+@click.command(help="Runs Reversi game of given size, given number of times, with selected players, "
+                    "which are learning or not, with or without GUI and returns wins count")
 @click.argument('p1', type=click.Choice(list(agents.keys())), default='human')
 @click.argument('p2', type=click.Choice(list(agents.keys())), default='human')
 @click.option('-l1', is_flag=True, default=False, help='Enable learning for first player')
@@ -20,14 +21,13 @@ from exceptions import DomainException
 @click.option('-s', '--size', nargs=2, type=int, default=(8, 8), help='Size of the map')
 @click.option('-n', '--number', type=int, default=1, help='Number of game repeats')
 @click.option('-d', '--delay', type=float, default=0.05, help='Minimum delay between player moves in ms')
-@click.option('-b', '--backend', type=click.Choice(['live', 'prepared']), default='live',
-              help='Way of working with game states')
+@click.option('--live/--prepared', default=True, help='Whether use live or prepared backend')
 @click.option('--gui/--nogui', default=True, help='Whether graphical interface should be shown')
-def reversi(p1, p2, l1, l2, size, number, delay, backend, gui):
+def reversi(p1, p2, l1, l2, size, number, delay, live, gui):
     player1 = construct_agent(p1, l1, size)
     player2 = construct_agent(p2, l2, size)
 
-    backend = LiveBackend(size) if backend == 'live' else PreparedBackend(size, get_path_to_backend_data(size))
+    backend = LiveBackend(size) if live else PreparedBackend(size, get_path_to_backend_data(size))
 
     gameplay_class = GuiGameplay if gui else NoGuiGameplay
     gameplay = gameplay_class(size, delay, backend)
