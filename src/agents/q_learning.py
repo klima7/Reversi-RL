@@ -7,7 +7,7 @@ from . import ActiveAgent, agent
 class QLearningAgent(ActiveAgent):
 
     NAME = 'q_learning'
-    DEFAULT_ALPHA = 0.5
+    DEFAULT_ALPHA = 0.2
     DEFAULT_EPSILON = 0.25
     DEFAULT_DISCOUNT = 0.99
 

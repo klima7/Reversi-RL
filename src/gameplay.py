@@ -133,11 +133,11 @@ class GuiGameplay(Gameplay):
         self.__screen = None
         self.__turn_font = None
         self.__winner_font = None
-        self.__pool = ThreadPool(1)
-        self.__task = None
         self.__last_move = None
         self.__pending_move = None
-        self.__pending_move_time = None
+
+        self.__before_move_time = None
+        self.__after_move_time = None
         self.__finish_time = None
 
     def play(self):
@@ -155,7 +155,9 @@ class GuiGameplay(Gameplay):
         self.__running = True
         self.__last_move = None
         self.__pending_move = None
-        self.__pending_move_time = None
+
+        self.__before_move_time = None
+        self.__after_move_time = None
         self.__finish_time = None
 
     def dispose(self):
@@ -288,23 +290,22 @@ class GuiGameplay(Gameplay):
                 self.__finish_time = time.time()
 
     def __update_move(self):
+        current_time = time.time()
+
         if self.__pending_move is None:
-            self.__update_pending_move()
-        elif time.time() - self.__pending_move_time > self._delay:
-            self.__execute_pending_move()
+            self.__pending_move = self.__get_move_from_player(self._current_player)
+            self.__before_move_time = current_time
 
-    def __update_pending_move(self):
-        action = self.__get_move_from_player(self._current_player)
-        if action is not None:
-            self.__pending_move = action
-            self.__pending_move_time = time.time()
-            self.__last_move = action
+        if self.__before_move_time is not None and self.__before_move_time + self._delay < current_time:
+            self.__last_move = self.__pending_move
+            self.__before_move_time = None
+            self.__after_move_time = current_time
 
-    def __execute_pending_move(self):
-        self._make_move(self.__pending_move)
-        self._update_player(self._current_player)
-        self.__pending_move = None
-        self.__pending_move_time = None
+        if self.__after_move_time is not None and self.__after_move_time + self._delay < current_time:
+            self._make_move(self.__pending_move)
+            self._update_player(self._current_player)
+            self.__pending_move = None
+            self.__after_move_time = None
 
     def __get_move_from_player(self, player):
         if player is None:
@@ -313,28 +314,7 @@ class GuiGameplay(Gameplay):
             return self.__get_move_from_artificial_player(player)
 
     def __get_move_from_artificial_player(self, player):
-        if self.__task is None:
-            self.__task = self.__pool.apply_async(GuiGameplay.__thread_to_get_action,
-                                                  [player, self._current_state, self._delay])
-
-        if self.__task.ready():
-            action = self.__task.get()
-            self.__task = None
-            return action
-
-        return None
-
-    @staticmethod
-    def __thread_to_get_action(player, state, delay):
-        start_time = time.time()
-        action = player.get_action(state)
-        duration = time.time() - start_time
-
-        sleep_time = delay - duration
-        if sleep_time > 0:
-            time.sleep(sleep_time)
-
-        return action
+        return player.get_action(self._current_state)
 
     def __get_move_from_real_player(self):
         possible_moves = self._game_state.get_moves()
