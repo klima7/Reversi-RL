@@ -1,7 +1,6 @@
 import time
 import signal
 from abc import ABC, abstractmethod
-from multiprocessing.pool import ThreadPool
 from itertools import count
 
 import pygame
@@ -131,8 +130,10 @@ class GuiGameplay(Gameplay):
 
         self.__running = True
         self.__screen = None
+
         self.__turn_font = None
         self.__winner_font = None
+
         self.__last_move = None
         self.__pending_move = None
 
@@ -187,9 +188,9 @@ class GuiGameplay(Gameplay):
     @staticmethod
     def __get_player_name(player):
         if player is None:
-            return 'human'
+            return 'Human'
         else:
-            return player.agent_name
+            return player.NAME.replace('_', ' ').capitalize()
 
     def __collect_events(self):
         for event in pygame.event.get():
