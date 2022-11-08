@@ -19,11 +19,13 @@ class Agent(ABC):
     def load_data(self, path):
         path = Path(path)
         if path.exists():
+            print(f'Loading {self.NAME} agent data...')
             with open(path, 'rb') as f:
                 data = pickle.load(f)
                 self.set_saved_data(data)
 
     def save_data(self, path):
+        print(f'Saving {self.NAME} agent data...')
         data_to_save = self.get_data_to_save()
         if data_to_save is None:
             return
