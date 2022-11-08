@@ -190,7 +190,7 @@ class GuiGameplay(Gameplay):
         if player is None:
             return 'Human'
         else:
-            return player.NAME.replace('_', ' ').capitalize()
+            return player.NAME.replace('_', ' ').title()
 
     def __collect_events(self):
         for event in pygame.event.get():

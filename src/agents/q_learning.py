@@ -3,6 +3,7 @@ import random
 
 from . import ActiveAgent, agent
 
+
 @agent
 class QLearningAgent(ActiveAgent):
 
