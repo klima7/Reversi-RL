@@ -5,9 +5,9 @@ from . import ActiveAgent, agent
 
 
 @agent
-class QLearningAgent(ActiveAgent):
+class SarsaAgent(ActiveAgent):
 
-    NAME = 'q_learning'
+    NAME = 'sarsa'
     DEFAULT_ALPHA = 0.2
     DEFAULT_EPSILON = 0.25
     DEFAULT_DISCOUNT = 0.99

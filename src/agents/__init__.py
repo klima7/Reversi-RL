@@ -17,4 +17,4 @@ def agent(cls):
 
 from .random import RandomAgent
 from .value_iteration import ValueIterAgent
-from .q_learning import QLearningAgent
+from .q_learning import SarsaAgent
