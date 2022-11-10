@@ -42,10 +42,10 @@ class SarsaAgent(ActiveAgent):
     def set_saved_data(self, data):
         self.__qvalues = data
 
-    def reset(self):
-        self.__planned_action = None
-
     # ------- main stuff ------
+
+    def before_gameplay(self):
+        self.__planned_action = None
 
     def get_action(self, state):
         if self.__planned_action is None:

@@ -16,11 +16,11 @@ class Environment:
         return self.__backend.get_all_possible_boards_numbers()
 
     def get_possible_actions(self, state):
-        game_state = self.__cvt_state_to_game_state(state)
+        game_state = self.get_game_state_from_state(state)
         return game_state.get_moves()
 
     def get_next_states(self, state, action):
-        game_state = self.__cvt_state_to_game_state(state)
+        game_state = self.get_game_state_from_state(state)
         game_state.make_move(action)
 
         next_states = set()
@@ -39,7 +39,7 @@ class Environment:
         return {next_state: probability for next_state in next_states}
 
     def get_reward(self, state, action, next_state):
-        game_state = self.__cvt_state_to_game_state(next_state)
+        game_state = self.get_game_state_from_state(next_state)
         winner = game_state.get_winner()
         if winner == Side.ME:
             return self.WIN_REWARD
@@ -51,12 +51,15 @@ class Environment:
 
     # auxiliary methods
 
+    def get_game_state_from_state(self, state):
+        board = self.cvt_state_to_board(state)
+        return GameState(board, Side.ME, self.__backend)
+
+    def get_game_state_from_position(self, position):
+        return GameState.create_from_number(self.__size, position, self.__backend)
+
     def cvt_board_to_state(self, board):
         return board.number
 
     def cvt_state_to_board(self, state):
         return Board.create_from_number(state, self.__size)
-
-    def __cvt_state_to_game_state(self, state):
-        board = self.cvt_state_to_board(state)
-        return GameState(board, Side.ME, self.__backend)

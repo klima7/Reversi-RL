@@ -18,3 +18,4 @@ def agent(cls):
 from .random import RandomAgent
 from .value_iteration import ValueIterAgent
 from .sarsa import SarsaAgent
+from .mcts import MctsAgent

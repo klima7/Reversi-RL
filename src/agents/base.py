@@ -10,6 +10,19 @@ class Agent(ABC):
     def __init__(self):
         self.learn = True
 
+    def initialize(self):
+        pass
+
+    def before_gameplay(self):
+        pass
+
+    def after_gameplay(self):
+        pass
+
+    @abstractmethod
+    def get_action(self, state):
+        pass
+
     def get_data_to_save(self):
         return None
 
@@ -33,35 +46,22 @@ class Agent(ABC):
             return pickle.dump(data_to_save, f)
 
 
-class PassiveAgent(Agent):
+class PassiveAgent(Agent, ABC):
 
     def __init__(self):
         super().__init__()
         self.env = None
 
-    def initialize(self):
-        pass
 
-    @abstractmethod
-    def get_action(self, state):
-        pass
-
-
-class ActiveAgent(Agent):
+class ActiveAgent(Agent, ABC):
 
     def __init__(self):
         super().__init__()
         self.get_possible_actions = None
 
+        # aux variables for game engine
         self._last_action = None
         self._last_state = None
 
-    @abstractmethod
-    def get_action(self, state):
-        pass
-
     def update(self, state, action, reward, next_state):
-        pass
-
-    def reset(self):
         pass

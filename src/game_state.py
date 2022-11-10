@@ -9,16 +9,28 @@ class GameState:
         self.__backend = backend
 
     def __hash__(self):
-        turn_bit = 1 if self.turn == Color.BLACK else 0
-        return self.board.number << 1 | turn_bit
+        return self.number
 
     def __eq__(self, other):
-        return self.board.number == other.board.number and self.turn == other.turn
+        return self.number == other.number
 
     @staticmethod
     def create_initial(size, backend):
         board = Board.create_initial(size)
         return GameState(board, Color.BLACK, backend)
+
+    @staticmethod
+    def create_from_number(size, number, backend):
+        turn_bit = number & 1
+        board_number = number >> 1
+        board = Board.create_from_number(board_number, size)
+        turn = Color.BLACK if turn_bit == 1 else Color.WHITE
+        return GameState(board, turn, backend)
+
+    @property
+    def number(self):
+        turn_bit = 1 if self.turn == Color.BLACK else 0
+        return self.board.number << 1 | turn_bit
 
     @property
     def size(self):

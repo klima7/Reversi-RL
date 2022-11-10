@@ -36,6 +36,22 @@ class Gameplay(ABC):
     def swap_players(self):
         self._player_black, self._player_white = self._player_white, self._player_black
 
+    def play(self):
+        self.__before_gameplay()
+        self._play()
+        self.__after_gameplay()
+        return self.__get_winner()
+
+    def reset(self):
+        self._game_state = GameState.create_initial(self._size, self._backend)
+
+    def dispose(self):
+        pass
+
+    @abstractmethod
+    def _play(self):
+        pass
+
     @property
     def _current_player(self):
         return self._player_white if self._game_state.turn == Color.WHITE else self._player_black
@@ -48,7 +64,7 @@ class Gameplay(ABC):
     def _current_state(self):
         return self._env.cvt_board_to_state(self._game_state.board_view)
 
-    def _get_winner(self):
+    def __get_winner(self):
         winner_color = self._game_state.get_winner()
         if winner_color == Color.WHITE:
             return self._player_white
@@ -58,25 +74,25 @@ class Gameplay(ABC):
             return None
 
     def __config_player(self, player):
-        if player is None:
-            return
-        elif isinstance(player, PassiveAgent):
+        if isinstance(player, PassiveAgent):
             player.env = self._env
-            player.initialize()
         elif isinstance(player, ActiveAgent):
             player.get_possible_actions = self._env.get_possible_actions
-        else:
-            raise DomainException('Player must be None or subclass of Passive/Active Agent')
 
-    @abstractmethod
-    def play(self):
-        pass
+        if player is not None:
+            player.initialize()
 
-    def reset(self):
-        self._game_state = GameState.create_initial(self._size, self._backend)
+    def __before_gameplay(self):
+        if self._player_black is not None:
+            self._player_black.before_gameplay()
+        if self._player_white is not None:
+            self._player_white.before_gameplay()
 
-    def dispose(self):
-        pass
+    def __after_gameplay(self):
+        if self._player_black is not None:
+            self._player_black.after_gameplay()
+        if self._player_white is not None:
+            self._player_white.after_gameplay()
 
     def _make_move(self, action):
         player = self._current_player
@@ -104,14 +120,12 @@ class NoGuiGameplay(Gameplay):
             raise DomainException('Human players are not allowed in gameplays without GUI')
         super().set_players(player_black, player_white)
 
-    def play(self):
+    def _play(self):
         while not self._game_state.is_finished():
             action = self._current_player.get_action(self._current_state)
             self._make_move(action)
             self._update_player(self._current_player)
         self._update_player(self._opposite_player)
-
-        return self._get_winner()
 
 
 class GuiGameplay(Gameplay):
@@ -141,15 +155,13 @@ class GuiGameplay(Gameplay):
         self.__after_move_time = None
         self.__finish_time = None
 
-    def play(self):
+    def _play(self):
         self.__init_gui_if_needed()
 
         while self.__should_run():
             self.__collect_events()
             self.__update()
             self.__draw_screen()
-
-        return self._get_winner()
 
     def reset(self):
         super().reset()
@@ -190,7 +202,7 @@ class GuiGameplay(Gameplay):
         if player is None:
             return 'Human'
         else:
-            return player.NAME.replace('_', ' ').title()
+            return player.NAME.replace('_', ' ').upper()
 
     def __collect_events(self):
         for event in pygame.event.get():
