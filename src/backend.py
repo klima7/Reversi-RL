@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import pickle
 
-from game_state import GameState
+from simulation import Simulation
 from board import Side, Board
 
 
@@ -28,22 +28,22 @@ class Backend(ABC):
 
     def _generate_all_possible_boards(self):
         boards = set()
-        game_states = {GameState.create_initial(self._size, LiveBackend(self._size))}
+        simulations = {Simulation.create_initial(self._size, LiveBackend(self._size))}
 
-        while game_states:
-            game_state = game_states.pop()
+        while simulations:
+            simulation = simulations.pop()
 
-            if game_state in game_states:
+            if simulation in simulations:
                 continue
 
-            if game_state.is_finished():
-                boards.update([game_state.board_view, game_state.opposite_board_view])
+            if simulation.is_finished():
+                boards.update([simulation.board_view, simulation.opposite_board_view])
             else:
-                boards.add(game_state.board_view)
+                boards.add(simulation.board_view)
 
-            for move in game_state.get_moves():
-                next_game_state = game_state.copy().make_move(move)
-                game_states.add(next_game_state)
+            for move in simulation.get_moves():
+                next_simulation = simulation.copy().make_move(move)
+                simulations.add(next_simulation)
 
         return boards
 
@@ -127,17 +127,17 @@ class PreparedBackend(Backend):
         data = {}
 
         for board in self._generate_all_possible_boards():
-            game_state = GameState(board, Side.ME, LiveBackend(self._size))
-            moves = game_state.get_moves()
-            moves_dict = {move: self.__get_move_result(game_state, move) for move in moves}
-            winner = game_state.get_winner() if game_state.is_finished() else None
+            simulation = Simulation(board, Side.ME, LiveBackend(self._size))
+            moves = simulation.get_moves()
+            moves_dict = {move: self.__get_move_result(simulation, move) for move in moves}
+            winner = simulation.get_winner() if simulation.is_finished() else None
             data[board.number] = [moves_dict, winner]
 
         return data
 
     @staticmethod
-    def __get_move_result(game_state, move):
-        next_game_state = game_state.copy().make_move(move)
-        is_turn_change = next_game_state.turn == Side.OPPONENT
-        next_board = next_game_state.board.to_relative(Side.ME)
+    def __get_move_result(simulation, move):
+        next_simulation = simulation.copy().make_move(move)
+        is_turn_change = next_simulation.turn == Side.OPPONENT
+        next_board = next_simulation.board.to_relative(Side.ME)
         return is_turn_change, next_board.number

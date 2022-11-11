@@ -6,7 +6,7 @@ from itertools import count
 import pygame
 from tqdm import tqdm
 
-from game_state import GameState
+from simulation import Simulation
 from environment import Environment
 from board import Color
 from exceptions import DomainException
@@ -19,7 +19,7 @@ class Gameplay(ABC):
         self._size = size
         self._delay = delay
 
-        self._game_state = GameState.create_initial(size, backend)
+        self._simulation = Simulation.create_initial(size, backend)
         self._env = Environment(size, backend)
 
         self._player_black = None
@@ -42,7 +42,7 @@ class Gameplay(ABC):
         return self.__get_winner()
 
     def reset(self):
-        self._game_state.reset()
+        self._simulation.reset()
 
     def dispose(self):
         pass
@@ -52,11 +52,11 @@ class Gameplay(ABC):
         pass
 
     def _get_decisive_player(self):
-        return self._player_white if self._game_state.turn == Color.WHITE else self._player_black
+        return self._player_white if self._simulation.turn == Color.WHITE else self._player_black
 
     def _get_state_for_player(self, player):
         color = Color.BLACK if player == self._player_black else Color.WHITE
-        return self._env.cvt_board_to_state(self._game_state.board.to_relative(color))
+        return self._env.cvt_board_to_state(self._simulation.board.to_relative(color))
 
     def _make_move(self, action):
         moving_player = self._get_decisive_player()
@@ -68,17 +68,17 @@ class Gameplay(ABC):
             moving_player.last_action = action
 
         # just move
-        self._game_state.make_move(action)
+        self._simulation.make_move(action)
 
         # notify agents about previous move result
-        if self._game_state.is_finished():
+        if self._simulation.is_finished():
             self.__update_agent(self._player_black)
             self.__update_agent(self._player_white)
         else:
             self.__update_agent(self._get_decisive_player())
 
     def __get_winner(self):
-        winner_color = self._game_state.get_winner()
+        winner_color = self._simulation.get_winner()
         if winner_color == Color.WHITE:
             return self._player_white
         elif winner_color == Color.BLACK:
@@ -122,7 +122,7 @@ class NoGuiGameplay(Gameplay):
         super().set_players(player_black, player_white)
 
     def _play(self):
-        while not self._game_state.is_finished():
+        while not self._simulation.is_finished():
             player = self._get_decisive_player()
             state = self._get_state_for_player(player)
             action = player.get_action(state)
@@ -182,14 +182,14 @@ class GuiGameplay(Gameplay):
             self.__draw_screen()
 
     def __should_run(self):
-        in_progress = not self._game_state.is_finished()
+        in_progress = not self._simulation.is_finished()
         cooldown_not_elapsed = self.__finish_time is not None and self.__finish_time + self._delay > time.time()
         return (in_progress or cooldown_not_elapsed) and self.__running
 
     def __update(self):
-        if not self._game_state.is_finished():
+        if not self._simulation.is_finished():
             self.__update_move()
-            if self._game_state.is_finished():
+            if self._simulation.is_finished():
                 self.__finish_time = time.time()
 
     def __update_move(self):
@@ -224,7 +224,7 @@ class GuiGameplay(Gameplay):
         return player.get_action(state)
 
     def __get_move_from_real_player(self):
-        possible_moves = self._game_state.get_moves()
+        possible_moves = self._simulation.get_moves()
         pressed = pygame.mouse.get_pressed()
         if pressed[0]:
             mouse_pos = pygame.mouse.get_pos()
@@ -255,7 +255,7 @@ class GuiGameplay(Gameplay):
                 signal.raise_signal(signal.SIGINT)
 
     def __draw_screen(self):
-        if self._game_state.is_finished():
+        if self._simulation.is_finished():
             self.__draw_finish_screen()
         else:
             self.__draw_standard_screen()
@@ -269,7 +269,7 @@ class GuiGameplay(Gameplay):
         self.__draw_turn()
 
     def __draw_finish_screen(self):
-        winner = self._game_state.get_winner()
+        winner = self._simulation.get_winner()
         text = self.__get_winner_text(winner)
         color = self.__get_winner_color(winner)
 
@@ -296,14 +296,14 @@ class GuiGameplay(Gameplay):
                              (x * self.FIELD_SIZE, self._size[0] * self.FIELD_SIZE), width=3)
 
     def __draw_discs(self):
-        possible_moves = self._game_state.get_moves()
+        possible_moves = self._simulation.get_moves()
         disc_center_offset = self.FIELD_SIZE // 2
         for y in range(self._size[0]):
             for x in range(self._size[1]):
-                disc_color = self._game_state.board[y, x]
+                disc_color = self._simulation.board[y, x]
                 pos = (x * self.FIELD_SIZE + disc_center_offset, y * self.FIELD_SIZE + disc_center_offset)
                 if disc_color == Color.ANY and (y, x) in possible_moves:
-                    color = self.WHITE_COLOR if self._game_state.turn == Color.WHITE else self.BLACK_COLOR
+                    color = self.WHITE_COLOR if self._simulation.turn == Color.WHITE else self.BLACK_COLOR
                     pygame.draw.circle(self.__screen, color, pos, self.DISC_SIZE // 2, width=3)
                 elif disc_color != Color.ANY:
                     color = self.WHITE_COLOR if disc_color == Color.WHITE else self.BLACK_COLOR
@@ -317,7 +317,7 @@ class GuiGameplay(Gameplay):
             pygame.draw.line(self.__screen, (255, 0, 0), (0, y_pos), (self._size[1] * self.FIELD_SIZE, y_pos), width=2)
 
     def __draw_turn(self):
-        color = self.WHITE_COLOR if self._game_state.turn == Color.WHITE else self.BLACK_COLOR
+        color = self.WHITE_COLOR if self._simulation.turn == Color.WHITE else self.BLACK_COLOR
         name = self.__get_player_name(self._get_decisive_player())
 
         pygame.draw.circle(self.__screen, color, (20, self.__screen.get_height() - 21), 11)

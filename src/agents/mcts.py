@@ -68,7 +68,7 @@ class MctsAgent(PassiveAgent):
     # ------- main stuff ------
 
     def get_action(self, state):
-        position = self.env.get_game_state_from_state(state).number
+        position = self.env.get_simulation_from_state(state).number
 
         if self.learn:
             self.__learn(position)
@@ -87,55 +87,55 @@ class MctsAgent(PassiveAgent):
             self.__backpropagate(path, reward)
 
     def __select_path(self, root_position):
-        game_state = self.env.get_game_state_from_position(root_position)
+        simulation = self.env.get_simulation_from_position(root_position)
         path = []
 
-        while self.__is_position_known(game_state.number):
-            path.append(game_state.number)
+        while self.__is_position_known(simulation.number):
+            path.append(simulation.number)
 
-            if game_state.is_finished():
+            if simulation.is_finished():
                 break
 
-            move = self.__select_move(game_state.number)
-            game_state.make_move(move)
+            move = self.__select_move(simulation.number)
+            simulation.make_move(move)
 
         return path
 
     def __select_move(self, position):
-        game_state = self.env.get_game_state_from_position(position)
-        moves = game_state.get_moves()
-        positions = [game_state.copy().make_move(move).number for move in moves]
+        simulation = self.env.get_simulation_from_position(position)
+        moves = simulation.get_moves()
+        positions = [simulation.copy().make_move(move).number for move in moves]
 
         if self.learn:
             undiscovered_moves = [move for move, position in zip(moves, positions) if not self.__is_position_known(position)]
             if len(undiscovered_moves) > 0:
                 return random.choice(undiscovered_moves)
 
-        ucb_values = [self.__ucb(game_state.number, position) for position in positions]
+        ucb_values = [self.__ucb(simulation.number, position) for position in positions]
         max_ucb_value = max(ucb_values)
         best_moves = [move for move, ucb_value in zip(moves, ucb_values) if ucb_value == max_ucb_value]
         best_move = random.choice(best_moves)
         return best_move
 
     def __expand(self, path):
-        game_state = self.env.get_game_state_from_position(path[-1])
-        if game_state.is_finished():
+        simulation = self.env.get_simulation_from_position(path[-1])
+        if simulation.is_finished():
             return
 
-        possible_moves = game_state.get_moves()
+        possible_moves = simulation.get_moves()
         move = random.choice(possible_moves)
-        game_state.make_move(move)
-        new_position = game_state.number
+        simulation.make_move(move)
+        new_position = simulation.number
         path.append(new_position)
 
     def __rollout(self, position):
-        game_state = self.env.get_game_state_from_position(position)
-        while not game_state.is_finished:
-            possible_moves = game_state.get_moves()
+        simulation = self.env.get_simulation_from_position(position)
+        while not simulation.is_finished:
+            possible_moves = simulation.get_moves()
             move = random.choice(possible_moves)
-            game_state.make_move(move)
+            simulation.make_move(move)
 
-        winner = game_state.get_winner()
+        winner = simulation.get_winner()
         reward = 1 if winner == Side.ME else (-1 if winner == Side.OPPONENT else 0)
         return reward
 

@@ -1,7 +1,7 @@
 from board import Board, Color
 
 
-class GameState:
+class Simulation:
 
     def __init__(self, board, turn, backend):
         self.board = board
@@ -17,7 +17,7 @@ class GameState:
     @staticmethod
     def create_initial(size, backend):
         board = Board.create_initial(size)
-        return GameState(board, Color.BLACK, backend)
+        return Simulation(board, Color.BLACK, backend)
 
     @staticmethod
     def create_from_number(size, number, backend):
@@ -25,7 +25,7 @@ class GameState:
         board_number = number >> 1
         board = Board.create_from_number(board_number, size)
         turn = Color.BLACK if turn_bit == 1 else Color.WHITE
-        return GameState(board, turn, backend)
+        return Simulation(board, turn, backend)
 
     @property
     def number(self):
@@ -45,7 +45,7 @@ class GameState:
         return self.board.to_relative(-self.turn)
 
     def copy(self):
-        return GameState(self.board.copy(), self.turn, self.__backend)
+        return Simulation(self.board.copy(), self.turn, self.__backend)
 
     def reset(self):
         self.board = Board.create_initial(self.board.size)
