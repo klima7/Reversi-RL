@@ -24,11 +24,12 @@ class MctsAgent(PassiveAgent):
         return [0, 0]
 
     def get_data_to_save(self):
-        print(len(self.__positions_stats))
+        print(f'There is {len(self.__positions_stats)} nodes in MCTS tree')
         return self.__positions_stats
 
     def set_saved_data(self, data):
         self.__positions_stats = data
+        print(f'There is {len(self.__positions_stats)} nodes in MCTS tree')
 
     @property
     def __c(self):
@@ -55,6 +56,9 @@ class MctsAgent(PassiveAgent):
     def __ucb(self, parent_position, child_position):
         parent_n = self.__get_position_visits(parent_position)
         child_n = self.__get_position_visits(child_position)
+
+        if parent_n == 0 or child_n == 0:
+            return 0
 
         exploitation = self.__get_position_value(child_position)
         exploration = math.sqrt(math.log(parent_n) / child_n)

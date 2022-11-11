@@ -18,7 +18,6 @@ class Gameplay(ABC):
     def __init__(self, size, delay, backend):
         self._size = size
         self._delay = delay
-        self._backend = backend
 
         self._game_state = GameState.create_initial(size, backend)
         self._env = Environment(size, backend)
@@ -43,44 +42,40 @@ class Gameplay(ABC):
         return self.__get_winner()
 
     def reset(self):
-        self._game_state = GameState.create_initial(self._size, self._backend)
+        self._game_state.reset()
 
     def dispose(self):
         pass
-
-    @property
-    def _current_player(self):
-        return self._player_white if self._game_state.turn == Color.WHITE else self._player_black
-
-    @property
-    def _opposite_player(self):
-        return self._player_black if self._game_state.turn == Color.WHITE else self._player_white
-
-    @property
-    def _current_state(self):
-        return self._env.cvt_board_to_state(self._game_state.board_view)
 
     @abstractmethod
     def _play(self):
         pass
 
-    def _make_move(self, action):
-        player = self._current_player
-        if player is not None:
-            player.last_state = self._current_state
-            player.last_action = action
-
-        self._game_state.make_move(action)
-
-    def _update_player(self, player):
-        state = self._get_state_for_player(player)
-        if isinstance(player, ActiveAgent) and player.last_action is not None:
-            reward = self._env.get_reward(player.last_state, player.last_action, state)
-            player.update(player.last_state, player.last_action, reward, state)
+    def _get_decisive_player(self):
+        return self._player_white if self._game_state.turn == Color.WHITE else self._player_black
 
     def _get_state_for_player(self, player):
         color = Color.BLACK if player == self._player_black else Color.WHITE
         return self._env.cvt_board_to_state(self._game_state.board.to_relative(color))
+
+    def _make_move(self, action):
+        moving_player = self._get_decisive_player()
+
+        # remember action and state to notify agent about action result later
+        if moving_player is not None:
+            state = self._get_state_for_player(moving_player)
+            moving_player.last_state = state
+            moving_player.last_action = action
+
+        # just move
+        self._game_state.make_move(action)
+
+        # notify agents about previous move result
+        if self._game_state.is_finished():
+            self.__update_agent(self._player_black)
+            self.__update_agent(self._player_white)
+        else:
+            self.__update_agent(self._get_decisive_player())
 
     def __get_winner(self):
         winner_color = self._game_state.get_winner()
@@ -112,23 +107,30 @@ class Gameplay(ABC):
         if self._player_white is not None:
             self._player_white.after_gameplay()
 
+    def __update_agent(self, player):
+        if player is not None and player.last_action is not None:
+            state = self._get_state_for_player(player)
+            reward = self._env.get_reward(player.last_state, player.last_action, state)
+            player.update(player.last_state, player.last_action, reward, state)
+
 
 class NoGuiGameplay(Gameplay):
 
     def set_players(self, player_black, player_white):
         if None in [player_black, player_white]:
-            raise DomainException('Human players are not allowed in gameplays without GUI')
+            raise DomainException('Human players are not allowed in games without GUI')
         super().set_players(player_black, player_white)
 
     def _play(self):
         while not self._game_state.is_finished():
-            action = self._current_player.get_action(self._current_state)
+            player = self._get_decisive_player()
+            state = self._get_state_for_player(player)
+            action = player.get_action(state)
             self._make_move(action)
-            self._update_player(self._current_player)
-        self._update_player(self._opposite_player)
 
 
 class GuiGameplay(Gameplay):
+
     FIELD_SIZE = 100
     DISC_SIZE = 80
 
@@ -155,14 +157,6 @@ class GuiGameplay(Gameplay):
         self.__after_move_time = None
         self.__finish_time = None
 
-    def _play(self):
-        self.__init_gui_if_needed()
-
-        while self.__should_run():
-            self.__collect_events()
-            self.__update()
-            self.__draw_screen()
-
     def reset(self):
         super().reset()
         self.__running = True
@@ -174,12 +168,73 @@ class GuiGameplay(Gameplay):
         self.__finish_time = None
 
     def dispose(self):
-        self.__dispose_gui()
+        pygame.quit()
+        self.__screen = None
+
+    # ----------------- update logic stuff ---------------------
+
+    def _play(self):
+        self.__init_gui_if_needed()
+
+        while self.__should_run():
+            self.__collect_events()
+            self.__update()
+            self.__draw_screen()
 
     def __should_run(self):
         in_progress = not self._game_state.is_finished()
         cooldown_not_elapsed = self.__finish_time is not None and self.__finish_time + self._delay > time.time()
         return (in_progress or cooldown_not_elapsed) and self.__running
+
+    def __update(self):
+        if not self._game_state.is_finished():
+            self.__update_move()
+            if self._game_state.is_finished():
+                self.__finish_time = time.time()
+
+    def __update_move(self):
+        current_time = time.time()
+
+        # get move
+        if self.__pending_move is None:
+            decisive_player = self._get_decisive_player()
+            self.__pending_move = self.__get_move_from_player(decisive_player)
+            self.__before_move_time = current_time
+
+        # draw move
+        if self.__before_move_time is not None and self.__before_move_time + self._delay < current_time:
+            self.__last_move = self.__pending_move
+            self.__before_move_time = None
+            self.__after_move_time = current_time
+
+        # apply move
+        if self.__after_move_time is not None and self.__after_move_time + self._delay < current_time:
+            self._make_move(self.__pending_move)
+            self.__pending_move = None
+            self.__after_move_time = None
+
+    def __get_move_from_player(self, player):
+        if player is None:
+            return self.__get_move_from_real_player()
+        else:
+            return self.__get_move_from_artificial_player(player)
+
+    def __get_move_from_artificial_player(self, player):
+        state = self._get_state_for_player(player)
+        return player.get_action(state)
+
+    def __get_move_from_real_player(self):
+        possible_moves = self._game_state.get_moves()
+        pressed = pygame.mouse.get_pressed()
+        if pressed[0]:
+            mouse_pos = pygame.mouse.get_pos()
+            move_pos = (mouse_pos[1] // self.FIELD_SIZE, mouse_pos[0] // self.FIELD_SIZE)
+            if move_pos in possible_moves:
+                return move_pos
+            return None
+        return None
+
+    # ----------------- pure GUI stuff ---------------------
 
     def __init_gui_if_needed(self):
         if not pygame.get_init():
@@ -192,17 +247,6 @@ class GuiGameplay(Gameplay):
 
             self.__turn_font = pygame.font.Font(pygame.font.get_default_font(), 20)
             self.__winner_font = pygame.font.Font(pygame.font.get_default_font(), 40)
-
-    def __dispose_gui(self):
-        pygame.quit()
-        self.__screen = None
-
-    @staticmethod
-    def __get_player_name(player):
-        if player is None:
-            return 'Human'
-        else:
-            return player.NAME.replace('_', ' ').upper()
 
     def __collect_events(self):
         for event in pygame.event.get():
@@ -240,22 +284,6 @@ class GuiGameplay(Gameplay):
         self.__screen.blit(text_surface, text_pos)
         pygame.draw.circle(self.__screen, color, circle_pos, 20)
 
-    def __get_winner_text(self, winner):
-        if winner == Color.BLACK:
-            return self.__get_player_name(self._player_black)
-        elif winner == Color.WHITE:
-            return self.__get_player_name(self._player_white)
-        else:
-            return 'draw'
-
-    def __get_winner_color(self, winner):
-        if winner == Color.BLACK:
-            return self.BLACK_COLOR
-        elif winner == Color.WHITE:
-            return self.WHITE_COLOR
-        else:
-            return self.MIDDLE_COLOR
-
     def __draw_board(self):
         self.__screen.fill(self.BOARD_COLOR)
         pygame.draw.rect(self.__screen, self.LINES_COLOR,
@@ -290,55 +318,34 @@ class GuiGameplay(Gameplay):
 
     def __draw_turn(self):
         color = self.WHITE_COLOR if self._game_state.turn == Color.WHITE else self.BLACK_COLOR
-        name = self.__get_player_name(self._current_player)
+        name = self.__get_player_name(self._get_decisive_player())
 
         pygame.draw.circle(self.__screen, color, (20, self.__screen.get_height() - 21), 11)
         turn_text = self.__turn_font.render(name, True, self.TEXT_COLOR)
         self.__screen.blit(turn_text, (40, self.__screen.get_height() - 30))
 
-    def __update(self):
-        if not self._game_state.is_finished():
-            self.__update_move()
-            if self._game_state.is_finished():
-                self.__finish_time = time.time()
-
-    def __update_move(self):
-        current_time = time.time()
-
-        if self.__pending_move is None:
-            self.__pending_move = self.__get_move_from_player(self._current_player)
-            self.__before_move_time = current_time
-
-        if self.__before_move_time is not None and self.__before_move_time + self._delay < current_time:
-            self.__last_move = self.__pending_move
-            self.__before_move_time = None
-            self.__after_move_time = current_time
-
-        if self.__after_move_time is not None and self.__after_move_time + self._delay < current_time:
-            self._make_move(self.__pending_move)
-            self._update_player(self._current_player)
-            self.__pending_move = None
-            self.__after_move_time = None
-
-    def __get_move_from_player(self, player):
-        if player is None:
-            return self.__get_move_from_real_player()
+    def __get_winner_text(self, winner):
+        if winner == Color.BLACK:
+            return self.__get_player_name(self._player_black)
+        elif winner == Color.WHITE:
+            return self.__get_player_name(self._player_white)
         else:
-            return self.__get_move_from_artificial_player(player)
+            return 'draw'
 
-    def __get_move_from_artificial_player(self, player):
-        return player.get_action(self._current_state)
+    def __get_winner_color(self, winner):
+        if winner == Color.BLACK:
+            return self.BLACK_COLOR
+        elif winner == Color.WHITE:
+            return self.WHITE_COLOR
+        else:
+            return self.MIDDLE_COLOR
 
-    def __get_move_from_real_player(self):
-        possible_moves = self._game_state.get_moves()
-        pressed = pygame.mouse.get_pressed()
-        if pressed[0]:
-            mouse_pos = pygame.mouse.get_pos()
-            move_pos = (mouse_pos[1] // self.FIELD_SIZE, mouse_pos[0] // self.FIELD_SIZE)
-            if move_pos in possible_moves:
-                return move_pos
-            return None
-        return None
+    @staticmethod
+    def __get_player_name(player):
+        if player is None:
+            return 'Human'
+        else:
+            return player.NAME.replace('_', ' ').upper()
 
 
 class Tournament:

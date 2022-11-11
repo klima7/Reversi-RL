@@ -47,6 +47,10 @@ class GameState:
     def copy(self):
         return GameState(self.board.copy(), self.turn, self.__backend)
 
+    def reset(self):
+        self.board = Board.create_initial(self.board.size)
+        self.turn = Color.BLACK
+
     def get_moves(self):
         return self.__backend.get_moves(self.board, self.turn)
 
