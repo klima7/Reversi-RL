@@ -48,10 +48,6 @@ class Gameplay(ABC):
     def dispose(self):
         pass
 
-    @abstractmethod
-    def _play(self):
-        pass
-
     @property
     def _current_player(self):
         return self._player_white if self._game_state.turn == Color.WHITE else self._player_black
@@ -63,6 +59,28 @@ class Gameplay(ABC):
     @property
     def _current_state(self):
         return self._env.cvt_board_to_state(self._game_state.board_view)
+
+    @abstractmethod
+    def _play(self):
+        pass
+
+    def _make_move(self, action):
+        player = self._current_player
+        if player is not None:
+            player.last_state = self._current_state
+            player.last_action = action
+
+        self._game_state.make_move(action)
+
+    def _update_player(self, player):
+        state = self._get_state_for_player(player)
+        if isinstance(player, ActiveAgent) and player.last_action is not None:
+            reward = self._env.get_reward(player.last_state, player.last_action, state)
+            player.update(player.last_state, player.last_action, reward, state)
+
+    def _get_state_for_player(self, player):
+        color = Color.BLACK if player == self._player_black else Color.WHITE
+        return self._env.cvt_board_to_state(self._game_state.board.to_relative(color))
 
     def __get_winner(self):
         winner_color = self._game_state.get_winner()
@@ -93,24 +111,6 @@ class Gameplay(ABC):
             self._player_black.after_gameplay()
         if self._player_white is not None:
             self._player_white.after_gameplay()
-
-    def _make_move(self, action):
-        player = self._current_player
-        if isinstance(player, ActiveAgent):
-            player._last_state = self._current_state
-            player._last_action = action
-
-        self._game_state.make_move(action)
-
-    def _update_player(self, player):
-        state = self._get_state_for_player(player)
-        if isinstance(player, ActiveAgent) and player._last_action is not None:
-            reward = self._env.get_reward(player._last_state, player._last_action, state)
-            player.update(player._last_state, player._last_action, reward, state)
-
-    def _get_state_for_player(self, player):
-        color = Color.BLACK if player == self._player_black else Color.WHITE
-        return self._env.cvt_board_to_state(self._game_state.board.to_relative(color))
 
 
 class NoGuiGameplay(Gameplay):
