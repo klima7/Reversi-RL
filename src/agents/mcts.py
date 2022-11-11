@@ -43,7 +43,7 @@ class MctsAgent(PassiveAgent):
     def __get_position_value(self, position):
         total = self.__positions_stats[position][0]
         visits = self.__positions_stats[position][1]
-        return total / visits if visits != 0 else 0
+        return total / visits
 
     def __update_position(self, position, reward):
         self.__positions_stats[position][0] += reward
@@ -55,9 +55,6 @@ class MctsAgent(PassiveAgent):
     def __ucb(self, parent_position, child_position):
         parent_n = self.__get_position_visits(parent_position)
         child_n = self.__get_position_visits(child_position)
-
-        if parent_n == 0 or child_n == 0:
-            return 0
 
         exploitation = self.__get_position_value(child_position)
         exploration = math.sqrt(math.log(parent_n) / child_n)
@@ -81,9 +78,8 @@ class MctsAgent(PassiveAgent):
             reward = self.__rollout(root_position)
             self.__update_position(root_position, reward)
         else:
-            new_position = self.__expand(path[-1])
-            reward = self.__rollout(new_position)
-            path.append(new_position)
+            self.__expand(path)
+            reward = self.__rollout(path[-1])
             self.__backpropagate(path, reward)
 
     def __select_path(self, root_position):
@@ -93,7 +89,7 @@ class MctsAgent(PassiveAgent):
         while self.__is_position_known(game_state.number):
             path.append(game_state.number)
 
-            if game_state.is_finished:
+            if game_state.is_finished():
                 break
 
             move = self.__select_move(game_state.number)
@@ -103,23 +99,30 @@ class MctsAgent(PassiveAgent):
 
     def __select_move(self, position):
         game_state = self.env.get_game_state_from_position(position)
-
         moves = game_state.get_moves()
         positions = [game_state.copy().make_move(move).number for move in moves]
+
+        if self.learn:
+            undiscovered_moves = [move for move, position in zip(moves, positions) if not self.__is_position_known(position)]
+            if len(undiscovered_moves) > 0:
+                return random.choice(undiscovered_moves)
+
         ucb_values = [self.__ucb(game_state.number, position) for position in positions]
         max_ucb_value = max(ucb_values)
-
         best_moves = [move for move, ucb_value in zip(moves, ucb_values) if ucb_value == max_ucb_value]
         best_move = random.choice(best_moves)
         return best_move
 
-    def __expand(self, position):
-        game_state = self.env.get_game_state_from_position(position)
+    def __expand(self, path):
+        game_state = self.env.get_game_state_from_position(path[-1])
+        if game_state.is_finished():
+            return
+
         possible_moves = game_state.get_moves()
         move = random.choice(possible_moves)
         game_state.make_move(move)
         new_position = game_state.number
-        return new_position
+        path.append(new_position)
 
     def __rollout(self, position):
         game_state = self.env.get_game_state_from_position(position)
