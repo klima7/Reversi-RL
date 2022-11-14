@@ -19,6 +19,7 @@ from .random import RandomAgent
 from .value_iteration import ValueIterAgent
 from .sarsa import SarsaAgent
 from .expected_sarsa import ExpectedSarsaAgent
+from .sarsa_lambda import SarsaLambdaAgent
 from .q_learning import QLearningAgent
 from .double_q_learning import DoubleQLearningAgent
 from .value_approx import ValueApproximationAgent
