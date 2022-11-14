@@ -64,6 +64,9 @@ class Board:
     def size(self):
         return self.__data.shape
 
+    def as_numpy_array(self):
+        return np.array(self.__data)
+
     def copy(self):
         return Board(np.array(self.__data))
 
@@ -76,13 +79,16 @@ class Board:
     def is_valid_position(self, position):
         return 0 <= position[0] < self.size[0] and 0 <= position[1] < self.size[1]
 
+    def get_discs_count(self, color):
+        return np.sum(self.__data == color)
+
     def get_legal_moves(self, color):
         empty_positions = np.column_stack(np.nonzero(self.__data == Color.ANY))
         legal_position = [position for position in empty_positions if self.__move_reverses_some_discs(position, color)]
         return np.array(legal_position).reshape(-1, 2).astype(np.int_)
 
     def make_move(self, position, color):
-        if not self.__is_legal_move(position, color):               # TODO: Remove this check when stable to speed up
+        if not self.__is_legal_move(position, color):
             raise Exception('Tried to perform illegal move')
         self.__data[position[0], position[1]] = color
         reverse_positions = self.__get_positions_to_reverse(position, color)

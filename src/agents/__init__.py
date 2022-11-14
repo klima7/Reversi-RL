@@ -21,3 +21,4 @@ from .sarsa import SarsaAgent
 from .expected_sarsa import ExpectedSarsaAgent
 from .q_learning import QLearningAgent
 from .double_q_learning import DoubleQLearningAgent
+from .value_approx import ValueApproximationAgent
