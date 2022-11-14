@@ -17,30 +17,30 @@ class SarsaAgent(ActiveAgent):
         self.__base_alpha = alpha
         self.__base_epsilon = epsilon
         self.__discount = discount
-        self.__qvalues = defaultdict(_default_dict_factory)
         self.__planned_action = None
+        self._qvalues = defaultdict(_default_dict_factory)
 
     # ------- aux stuff ------
 
     @property
-    def __alpha(self):
+    def _alpha(self):
         return self.__base_alpha if self.learn else 0
 
     @property
-    def __epsilon(self):
+    def _epsilon(self):
         return self.__base_epsilon if self.learn else 0
 
-    def __get_qvalue(self, state, action):
-        return self.__qvalues[state][action]
+    def _get_qvalue(self, state, action):
+        return self._qvalues[state][action]
 
-    def __set_qvalue(self, state, action, value):
-        self.__qvalues[state][action] = value
+    def _set_qvalue(self, state, action, value):
+        self._qvalues[state][action] = value
 
     def get_data_to_save(self):
-        return self.__qvalues
+        return self._qvalues
 
     def set_saved_data(self, data):
-        self.__qvalues = data
+        self._qvalues = data
 
     # ------- main stuff ------
 
@@ -49,45 +49,45 @@ class SarsaAgent(ActiveAgent):
 
     def get_action(self, state):
         if self.__planned_action is None:
-            return self.__get_new_action(state)
+            return self._get_new_action(state)
         else:
             return self.__planned_action
 
     def update(self, state, action, reward, next_state):
-        self.__planned_action = self.__get_new_action(next_state)
+        self.__planned_action = self._get_new_action(next_state)
 
-        expr = reward + self.__discount * self.__get_value(next_state)
-        new_qvalue = (1-self.__alpha) * self.__get_qvalue(state, action) + self.__alpha * expr
-        self.__set_qvalue(state, action, new_qvalue)
+        expr = reward + self.__discount * self._get_value(next_state)
+        new_qvalue = (1 - self._alpha) * self._get_qvalue(state, action) + self._alpha * expr
+        self._set_qvalue(state, action, new_qvalue)
 
-    def __get_new_action(self, state):
-        possible_actions = self.get_possible_actions(state)
-
-        if len(possible_actions) == 0:
-            return None
-
-        should_random = random.random() < self.__epsilon
-
-        if should_random:
-            return random.choice(possible_actions)
-        else:
-            return self.__get_best_action(state)
-
-    def __get_value(self, state):
+    def _get_value(self, state):
         possible_actions = self.get_possible_actions(state)
 
         if len(possible_actions) == 0:
             return 0.0
 
-        return max([self.__get_qvalue(state, action) for action in possible_actions])
+        return max([self._get_qvalue(state, action) for action in possible_actions])
 
-    def __get_best_action(self, state):
+    def _get_new_action(self, state):
         possible_actions = self.get_possible_actions(state)
 
         if len(possible_actions) == 0:
             return None
 
-        qvalues = [self.__get_qvalue(state, action) for action in possible_actions]
+        should_random = random.random() < self._epsilon
+
+        if should_random:
+            return random.choice(possible_actions)
+        else:
+            return self._get_best_action(state)
+
+    def _get_best_action(self, state):
+        possible_actions = self.get_possible_actions(state)
+
+        if len(possible_actions) == 0:
+            return None
+
+        qvalues = [self._get_qvalue(state, action) for action in possible_actions]
         best_qvalue = max(qvalues)
         best_actions = [action for action, qvalue in zip(possible_actions, qvalues) if qvalue == best_qvalue]
         best_action = random.choice(best_actions)
