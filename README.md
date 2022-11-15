@@ -1,4 +1,40 @@
 # Reversi
+<img src="https://github.com/klima7/Reversi/blob/main/screenshot.png" width="200" />
+
+## Overview
+Othello game prepared for reinforcement learning with following agents implemented:
+- Value Iteration
+- MCTS
+- SARSA
+- SARSA-Lambda
+- Expected SARSA
+- Q-Learning
+- Double Q-Learning
+- Value Function Approximation
+- Random
+
+## Usage
+Inside src directory: `python reversi.py --help`:
+```
+Usage: reversi.py [OPTIONS] [[human|random|value_iter|mcts|sarsa|exp_sarsa|sar
+                  sa_lambda|q_learning|dq_learning|value_approx]] [[human|rand
+                  om|value_iter|mcts|sarsa|exp_sarsa|sarsa_lambda|q_learning|d
+                  q_learning|value_approx]]
+
+  Runs Reversi game of given size, given number of times, with selected
+  players, which are learning or not, with or without GUI and returns wins
+  count
+
+Options:
+  -l1                    Enable learning for first player
+  -l2                    Enable learning for second player
+  -s, --size INTEGER...  Size of the map
+  -n, --number INTEGER   Number of game repeats
+  -d, --delay FLOAT      Minimum delay between player moves in ms
+  --live / --prepared    Whether use live or prepared backend
+  --gui / --nogui        Whether graphical interface should be shown
+  --help                 Show this message and exit.
+```
 
 ## Obtained results
 
