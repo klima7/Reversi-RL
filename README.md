@@ -46,10 +46,14 @@ Backend specifies how possible player moves, terminal states, subsequent game st
 ### Map 5x4
 | Algorithm     | win / lost / draw |
 | ------------- | ----------------- |
-| value\_approx | 85.1 / 12.1 / 2.8 |
-| sarsa\_lambda | 49.9 / 46.1 / 4.0 |
-| q\_learning   | 49.8 / 46.6 / 3.6 |
-| mcts          | 44.7 / 51.1 / 4.2 |
+| dq\_learning  | 98.8 / 0.7 / 0.5  |
+| exp\_sarsa    | 98.3 / 1.4 / 0.3  |
+| mcts          | 78.7 / 15.7 / 5.6 |
+| q\_learning   | 99.7 / 0.3 / 0.0  |
+| sarsa         | 99.6 / 0.4 / 0.0  |
+| sarsa\_lambda | 99.7 / 0.2 / 0.1  |
+| value\_approx | 93.3 / 6.1 / 0.6  |
+| value\_iter   | 99.5 / 0.3 / 0.2  |
 
 ### Map 5x5
 | Algorithm     | win / lost / draw |
