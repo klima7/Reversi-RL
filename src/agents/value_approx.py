@@ -119,7 +119,7 @@ class ValueApproximationAgent(PassiveAgent):
         board_array = board.as_numpy_array()
         h_edges = board_array[1:-1, (0, -1)]
         v_edges = board_array[(0, -1), 1:-1]
-        edges = np.stack([h_edges.flatten(), v_edges.flatten()])
+        edges = np.concatenate([h_edges.flatten(), v_edges.flatten()])
         return np.sum(edges == side)
 
     @staticmethod

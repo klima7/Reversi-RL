@@ -10,7 +10,7 @@ from board import Side
 class MctsAgent(PassiveAgent):
 
     NAME = 'mcts'
-    DEFAULT_C = 2
+    DEFAULT_C = 4
 
     def __init__(self, c=DEFAULT_C):
         super().__init__()
