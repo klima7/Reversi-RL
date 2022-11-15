@@ -36,6 +36,11 @@ Options:
   --help                 Show this message and exit.
 ```
 
+## Backends
+Backend specifies how possible player moves, terminal states, subsequent game states are calculated. There are two backends implemented:
+- **Live** - Everything is calculated on the fly, what is relatively slow.
+- **Prepared** - All states, transitions and so on are calculated only once, saved in a file and are fast loaded in subsequent program launches. Require initial delay to build everything, but following games are much faster.
+
 ## Obtained results
 
 ### Map 5x4
