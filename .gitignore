@@ -1,3 +1,4 @@
 .idea/
 res/*
 !res/.gitkeep
+__pycache__/
