@@ -43,12 +43,14 @@ Backend specifies how possible player moves, terminal states, subsequent game st
 
 ## Obtained results
 
+Percent results of 1000 games with random player
+
 ### Map 5x4
 | Algorithm     | win / lost / draw |
 | ------------- | ----------------- |
 | dq\_learning  | 98.8 / 0.7 / 0.5  |
 | exp\_sarsa    | 98.3 / 1.4 / 0.3  |
-| mcts          | 78.7 / 15.7 / 5.6 |
+| mcts          | 79.3 / 15.8 / 4.9 |
 | q\_learning   | 99.7 / 0.3 / 0.0  |
 | sarsa         | 99.6 / 0.4 / 0.0  |
 | sarsa\_lambda | 99.7 / 0.2 / 0.1  |
@@ -70,7 +72,7 @@ Backend specifies how possible player moves, terminal states, subsequent game st
 | Algorithm     | win / lost / draw |
 | ------------- | ----------------- |
 | value\_approx | 79.3 / 18.0 / 2.7 |
-| mcts          | 47.4 / 47.8 / 4.8 |
+| mcts          | 47.7 / 46.3 / 6.0 |
 
 ### Map 8x8
 | Algorithm     | win / lost / draw |
@@ -78,7 +80,7 @@ Backend specifies how possible player moves, terminal states, subsequent game st
 | value\_approx | 85.1 / 12.1 / 2.8 |
 | sarsa\_lambda | 49.9 / 46.1 / 4.0 |
 | q\_learning   | 49.8 / 46.6 / 3.6 |
-| mcts          | 44.7 / 51.1 / 4.2 |
+| mcts          | 51.0 / 45.5 / 3.5 |
 
 ## Requirements
 - Python version: `3.10.5`
